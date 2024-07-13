@@ -31,6 +31,12 @@ github:
 #twitter:
 #  username: # EmbeddedOS # change to your twitter username
 
+youtube:
+  username: '@EmbeddedOS'
+
+linkedin:
+  username: in/congnt264
+
 social:
   # Change to your full name.
   # It will be displayed as the default author of the posts and the copyright owner in the Footer
