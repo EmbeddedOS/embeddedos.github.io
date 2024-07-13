@@ -14,9 +14,9 @@ timezone:
 # jekyll-seo-tag settings › https://github.com/jekyll/jekyll-seo-tag/blob/master/docs/usage.md
 # ↓ --------------------------
 
-title: Cong Nguyen 😎 # the main title
+title: Công. Ng 😎 # the main title
 
-tagline: Hi, I am a software engineer 🐋. This is my personal blog talking about my passion fields. Welcome your feedback and ideas!
+tagline: Hi there, welcome to my blog 🐋
 
 description: >- # used by seo meta and the atom feed
   A minimal, responsive and feature-rich Jekyll theme for technical writing.
