@@ -14,9 +14,9 @@ timezone:
 # jekyll-seo-tag settings › https://github.com/jekyll/jekyll-seo-tag/blob/master/docs/usage.md
 # ↓ --------------------------
 
-title: EmbeddedOS # the main title
+title: Cong Nguyen 😎 # the main title
 
-tagline: A software engineer # it will display as the sub-title
+tagline: Hi, I am a software engineer 🐋. This is my personal blog talking about my passion fields. Welcome your feedback and ideas!
 
 description: >- # used by seo meta and the atom feed
   A minimal, responsive and feature-rich Jekyll theme for technical writing.
@@ -28,21 +28,21 @@ url: "https://embeddedos.github.io"
 github:
   username: EmbeddedOS # change to your github username
 
-twitter:
-  username: EmbeddedOS # change to your twitter username
+#twitter:
+#  username: # EmbeddedOS # change to your twitter username
 
 social:
   # Change to your full name.
   # It will be displayed as the default author of the posts and the copyright owner in the Footer
-  name: EmbeddedOS
+  name: Cong Nguyen
   email: congnt264@gmail.com # change to your email address
   links:
     # The first element serves as the copyright owner's link
-    - https://twitter.com/username # change to your twitter homepage
+    # - https://twitter.com/username # change to your twitter homepage
     - https://github.com/EmbeddedOS # change to your github homepage
     # Uncomment below to add more social links
     # - https://www.facebook.com/username
-    # - https://www.linkedin.com/in/username
+    - https://www.linkedin.com/in/congnt264
 
 # Site Verification Settings
 webmaster_verifications:
