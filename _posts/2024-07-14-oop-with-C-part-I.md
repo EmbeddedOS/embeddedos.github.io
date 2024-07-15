@@ -227,11 +227,9 @@ int main()
 
 ## 4. Summary
 
-**OOP is not a feature that this language has and others don't**. It should be an idea that we should consider while developing applications. Here are some main ideas about this:
+**OOP is not a feature that this language has and others don't**. It should be an idea that we should consider while developing applications. Here are some main ideas:
 
 - Try to structure the code to become objects: have their own properties, behaviors, and lifecycle events.
 - Avoid global data, static, extern variables that make the code is harder to read, test, control data flow.
 - Clarify object life-cycle events: constructor and destructor, binding resources with object's lifetime.
 - Make re-entrant methods, methods only act on objects and parameters.
-
-Hope you learn something valuable, really welcome your feedback and ideas!
