@@ -26,4 +26,30 @@ In this example, abstraction is how your browser abstracts **How to get resource
 
 ### 1.2. Abstraction in C example
 
-## 2. Abstraction with Opaque Object pattern
+A typical example of abstraction in C is system calls, which are interfaces provided by the kernel for user space to access its services. Take this example: using the `open()` and `write()` system calls, you tell the kernel that you want to write content to a file, and the kernel handles the writing process.
+
+```c
+int fd = open(FILE_PATH, O_WRONLY);
+int res = write(fd, "Your data", 9);
+```
+
+## 2. Abstraction with Opaque Object
+
+### 2.1. The Opaque Type
+
+The opaque Object Pattern, based on the C opaque type feature, revolves around a data type whose concrete data structure is not defined in its interface. With this pattern, you cannot create objects directly, but you can hold a pointer to them (known as an `opaque pointer`). Users can interact with APIs that accept these opaque pointers as parameters, enabling functionality while keeping the underlying implementation hidden.
+
+```c
+struct opaque_object_t;
+int opaque_object_do_something(struct opaque_object_t *obj, int params);
+```
+
+### 2.2. Abstraction with Opaque Object
+
+Back to the previous `person object` example in the [OOP: Object blog](2024-07-14-oop-with-C-part-I.md). But in this time, we don't want to expose all the `person struct`, only expose necessary APIs. Here is the way we do.
+
+In the header file (the interface that we provide):
+
+```c
+typedef struct person
+```
