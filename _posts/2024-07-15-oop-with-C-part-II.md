@@ -14,7 +14,7 @@ pin: true
 
 Abstraction refers to the the concept of hiding the complex implementation details of a system, and exposing only the essential features of the object.
 
-### 1.1. Abstraction in real world example
+### 1.1. Example of abstraction in the real world
 
 Let get an example of abstraction in Internet System. Assume that you want to access to the `facebook.com` website. You simply typing it in your browser. But behind the scene are combination of massive systems.
 
@@ -24,7 +24,7 @@ Let get an example of abstraction in Internet System. Assume that you want to ac
 
 In this example, abstraction is how your browser abstracts **How to get resources from a website** and how Facebook abstracts **How to access Facebook servers**.
 
-### 1.2. Abstraction in C example
+### 1.2. Example of abstraction in C
 
 A typical example of abstraction in C is system calls, which are interfaces provided by the kernel for user space to access its services. Take this example: using the `open()` and `write()` system calls, you tell the kernel that you want to write content to a file, and the kernel handles the writing process.
 
@@ -33,7 +33,7 @@ int fd = open(FILE_PATH, O_WRONLY);
 int res = write(fd, "Your data", 9);
 ```
 
-## 2. Abstraction with Opaque Object
+## 2. Abstraction with objects
 
 ### 2.1. The Opaque Type
 
@@ -46,10 +46,98 @@ int opaque_object_do_something(struct opaque_object_t *obj, int params);
 
 ### 2.2. Abstraction with Opaque Object
 
-Back to the previous `person object` example in the [OOP: Object blog](2024-07-14-oop-with-C-part-I.md). But in this time, we don't want to expose all the `person struct`, only expose necessary APIs. Here is the way we do.
-
-In the header file (the interface that we provide):
+Back to the previous `person object` example in the [OOP: Object Blog](/posts/oop-with-C-part-I/). This time, we aim to expose only necessary APIs without revealing the entire `person struct`. In the header file (the interface provided), we include a constructor `person_init` for creating a person object, a destructor `person_deinit` for cleanup, and additional methods for manipulating the object:
 
 ```c
-typedef struct person
+struct person_i_t;
+typedef struct person_i_t* person_t;
+
+/* Constructor. */
+person_t person_init(const char *name);
+
+/* Destructor. */
+int person_deinit(person_t *self);
+
+/* And more methods ... */
+int person_talk(person_t self, const char *speech);
+int person_move(person_t self, int distance);
 ```
+
+And in the source file, we define the internal person struct:
+
+```c
+struct person_i_t
+{
+  /* Person properties. */
+  const char name[MAX_LENGTH];
+  const char language[MAX_LENGTH];
+
+  int length;
+  int weight;
+  int current_location;
+};
+
+int person_deinit(person_t *self)
+{
+    free(*self);
+    *self = NULL;
+    return 0;
+}
+
+person_t person_init(const char *name)
+{
+    person_t self = (person_t)malloc(sizeof(person_i_t));
+    /* Init the object ... */
+    strcpy(self->name, name);
+
+    return self;
+}
+
+int person_talk(person_t self, const char *speech)
+{
+  if (strcmp(self->language, "English") == 0)
+  {
+    printf("%s: %s\n", self->name, speech);
+  }
+
+  return 0;
+}
+
+int person_move(person_t self, int distance)
+{
+  self->current_location += distance;
+  return 0;
+}
+```
+
+> The reason we use a double pointer for the destructor function is to be able to assign the user pointer to `NULL`, thereby preventing it from holding an invalid address.
+{: .prompt-tip }
+
+This approach allows us to conceal all implementation details of the person object. In the application code, there is no need to concern ourselves with the internal implementation of the `person struct`. We can interact with the object solely through its defined interface and methods provided in the header file. This encapsulation simplifies usage and enhances maintainability by abstracting away unnecessary implementation specifics.
+
+```c
+int main()
+{
+  /* 1. Create a object. */
+  person_t John = person_init("John");
+
+  /* 2. Do object behaviors. */
+  person_talk(John, "Hi there!");
+  person_move(John, 3);
+
+  /* 3. Clean-up object. */
+  person_deinit(&John);
+}
+```
+
+> This often necessitates dynamic memory allocation using `malloc()` (applications don't know about the object size), which can lead to **memory fragmentation** if used excessively. One solution is to provide a special API to retrieve the object size, enabling users to manage memory themselves. This approach allows for alternative allocation methods like `alloca()` for stack memory allocation, addressing concerns about memory fragmentation caused by frequent `malloc()` calls.
+{: .prompt-warning }
+
+## 3. Summary
+
+Abstraction is a fundamental concept in software development, crucial not only in Object-Oriented Programming (OOP) but also in real-world applications. Understanding this concept can shift our coding mindset towards always striving to simplify interfaces for the users.
+Let's summarize some benefits of deploying the OOP abstraction concept in C code:
+
+- **Interface Simplification**: Provides clear and simplified interfaces to interact with objects, hiding implementation details.
+- **Code Reusability**: Promotes reuse of code through inheritance and polymorphism, facilitating easier maintenance and updates.
+- **Enhanced Modifiability**: Facilitates easier modification and extension of code without affecting other parts of the system.

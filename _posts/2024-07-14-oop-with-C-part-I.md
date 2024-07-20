@@ -209,7 +209,6 @@ int person_move(person_t *self, int distance)
 Now take a look how we use this object in the application code.
 
 ```c
-
 int main()
 {
   /* 1. Create a object. */
