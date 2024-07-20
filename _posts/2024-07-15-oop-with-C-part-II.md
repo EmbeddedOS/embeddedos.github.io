@@ -130,7 +130,7 @@ int main()
 }
 ```
 
-> This often necessitates dynamic memory allocation using `malloc()` (applications don't know about the object size), which can lead to **memory fragmentation** if used excessively. One solution is to provide a special API to retrieve the object size, enabling users to manage memory themselves. This approach allows for alternative allocation methods like `alloca()` for stack memory allocation, addressing concerns about memory fragmentation caused by frequent `malloc()` calls.
+> This often necessitates dynamic memory allocation using `malloc()` (applications don't know about the object size) every time we create object, which can lead to **memory fragmentation** if used excessively. One solution is to provide a special API to retrieve the object size, enabling users to manage memory themselves. This approach allows for alternative allocation methods like `alloca()` for stack memory allocation, addressing concerns about memory fragmentation caused by frequent `malloc()` calls.
 {: .prompt-warning }
 
 ## 3. Summary
