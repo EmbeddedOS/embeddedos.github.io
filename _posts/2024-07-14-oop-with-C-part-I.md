@@ -7,7 +7,6 @@ author: Cong
 date: 2024-07-14 7:00:00 +0800
 categories: [Design Pattern, OOP-C]
 tags: [Design Pattern, OOP, C]
-pin: true
 ---
 
 ## 1. Why OOP?
