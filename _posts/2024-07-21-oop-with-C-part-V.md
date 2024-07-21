@@ -47,7 +47,8 @@ Let's consider an example of a `person` object that provides a virtual method `w
 The interface that we provide:
 
 ```c
-typedef person_i_t *person_t;
+struct person_i_t;
+typedef struct person_i_t *person_t;
 
 /* Public methods ... */
 const char *person_get_name(person_t self);
@@ -61,7 +62,7 @@ In the source file, we implement base methods. For the the virtual method, we ca
 
 ```c
 typedef int (*v_work)(person_t self);
-typedef struct
+struct person_i_t
 {
     v_work work_cb;
 
@@ -69,7 +70,8 @@ typedef struct
     char name[MAX_LENGTH];
     char language[MAX_LENGTH];
     int age;
-} person_i_t;
+};
+typedef struct person_i_t person_i_t;
 
 static int person_work_base(person_t self)
 {
