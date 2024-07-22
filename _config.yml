@@ -124,9 +124,9 @@ comments:
   # Giscus options › https://giscus.app
   giscus:
     repo: EmbeddedOS/embeddedos.github.io
-    repo_id:
-    category:
-    category_id:
+    repo_id: R_kgDOMUokPA
+    category: Announcements
+    category_id: DIC_kwDOMUokPM4Cgygc
     mapping: # optional, default to 'pathname'
     strict: # optional, default to '0'
     input_position: # optional, default to 'bottom'
