@@ -1,5 +1,5 @@
 ---
-title: 'Build a x86-64 bootloader from scratch: BIOS'
+title: 'Build a x86 bootloader from scratch with BIOS'
 description: >-
   Bootloader is a piece of code that is executed once the system is booted.
   
