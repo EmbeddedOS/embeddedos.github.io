@@ -24,7 +24,7 @@ The principal duties of the main BIOS during POST include:
 - Verify CPU registers.
 - Verify the integrity of the BIOS code itself.
 - Verify some basic components like DMA, timer, interrupt controller.
-- Initialize, size, and verify system main memory.
+- Initialize, size, and verify system main memory (check corruptions).
 - Initialize BIOS.
 - Pass control to other specialized extension BIOSes (if installed).
 - **Identify, organize, and select which devices are available for booting**.
@@ -38,7 +38,8 @@ In later BIOS versions, POST will also:
 
 Once BIOS finds the boot sector it loads the image in memory and execute it. If a valid boot sector is not found, BIOS check for next drive in boot sequence until it find valid boot sector. If BIOS fails to get valid boot sector, generally it stops the execution and gives an error message "Disk boot failure".
 
-**It is boot sectors responsibility to load the operating system in memory and execute it.**
+> **It is boot sectors responsibility to load the operating system in memory and execute it.**
+{: .prompt-tip }
 
 ### 1.2. BIOS
 
@@ -108,6 +109,12 @@ In this topic, we'll talk about BIOS, but let see some main differences between 
 
 - It seems UEFI more powerful than BIOS, but BIOS is still widely used because offering simplicity and compatibility with older hardware and OSes.
 
-#### 1.2.3. Additional: Where and how BIOS is loaded? Who load it?
+#### 1.2.3. Additional:  Who run the BIOS? How is it loaded? Where?
+
+Originally, BIOS firmware was stored in a ROM chip on the PC motherboard. In later computer systems the BIOS contents are stored on Flash Memory (or NVRAM) so it can be rewritten without removing the chip from mother board.
+
+Early Intel processors started at physical address 000FFFF0h.
 
 ### 1.3. Master Boot Record
+
+## 2. Boot Process
