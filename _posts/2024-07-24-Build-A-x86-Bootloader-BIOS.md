@@ -7,6 +7,9 @@ author: Cong
 date: 2024-07-24 7:00:00 +0800
 categories: [Bootloader-x86, BIOS]
 tags: [Bootloader, BIOS, x86, Assembly]
+image:
+  path: assets/img/Legacy_BIOS_boot_process_fixed.png
+  alt: BIOS Booting Process.
 ---
 
 ## 1. Fundamental concepts
