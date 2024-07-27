@@ -110,7 +110,7 @@ In this topic, we'll talk about BIOS, but let see some main differences between 
 |------------|---------------------------|------------------------------|
 ```
 
-- It seems UEFI more powerful than BIOS, but BIOS is still widely used because offering simplicity and compatibility with older hardware and OSes.
+It seems UEFI more powerful than BIOS, but BIOS is still widely used because offering simplicity and compatibility with older hardware and OSes.
 
 ### 1.3. Master Boot Record
 
@@ -129,6 +129,30 @@ Therefore, the MBR-based partition scheme is in the process of being superseded 
 
 ## 2. Boot Process
 
+![Bios Boot Process](assets/img/Legacy_BIOS_boot_process_fixed.png)
+
+### 2.1. System startup
+
+#### 2.1.1. Where is BIOS firmware stored?
+
 Originally, BIOS firmware was stored in a ROM chip on the PC motherboard. In later computer systems the BIOS contents are stored on Flash Memory (or NVRAM) so it can be rewritten without removing the chip from mother board.
 
-Early Intel processors started at physical address 000FFFF0h.
+#### 2.1.2. How does BIOS start running?
+
+Early Intel processors started at physical address 000FFFF0h. Systems with later processors provide logic to start running the BIOS from the system ROM.
+
+- `cold boot`: system has been powered up or the reset button was pressed.
+- `warm boot`: Ctrl + Alt + Delete was pressed.
+
+If the system has a cool boot, the full POST is run. Otherwise, a special flag value stored in **Nonvolatile BIOS memory** tested by the BIOS allows bypass of the lengthy POST and memory detection.
+
+### 2.2. Boot process
+
+After POST, the BIOS calls `INT 0x19` to start booting processing. When `INT 0x19` is called, the BIOS attempts to locate the `boot loader` software (Master Boot Record) on a `boot device` such as a hard disk, a floppy disk, CD or DVD. It loads and executes the first boot software it finds, giving the control to it.
+
+The BIOS uses the boot devices set in the **Nonvolatile BIOS memory**. It checks each device in order to see if it is bootable by **attempting to load the first sector (boot sector)**. If the sector cannot be read, the BIOS proceeds to the next device. If the sector is read successfully, BIOS checks for the boot sector signature `0x55AA` in the end of sector.
+
+> The boot signature number `0x55AA` is also called `magic number`. It's in the last 2 bytes of boot sector.
+{: .prompt-info }
+
+When a bootable device is found, the BIOS transfer control to the loaded sector.
