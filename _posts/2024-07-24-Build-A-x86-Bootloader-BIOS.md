@@ -9,7 +9,7 @@ categories: [Bootloader-x86, BIOS]
 tags: [Bootloader, BIOS, x86, Assembly]
 image:
   path: assets/img/Legacy_BIOS_boot_process_fixed.png
-  alt: BIOS Booting Process.
+  alt: BIOS Boot Process.
 ---
 
 ## 1. Fundamental concepts
@@ -112,12 +112,23 @@ In this topic, we'll talk about BIOS, but let see some main differences between 
 
 - It seems UEFI more powerful than BIOS, but BIOS is still widely used because offering simplicity and compatibility with older hardware and OSes.
 
-#### 1.2.3. Additional:  Who run the BIOS? How is it loaded? Where?
+### 1.3. Master Boot Record
+
+A master boot record (MBR) is a type of **boot sector** in the first few blocks of partitioned computer mass storage devices (hard disk, etc.). The MBR contains:
+
+- Information on **how the disc's sectors are divided into partitions**, each partition notionally containing a file system.
+- **Executable code to function as a loader** for the installed OS - usually by passing control over to the loader's second stage.
+
+> The MBR code is usually referred to as a bootloader.
+{: .prompt-info }
+
+#### 1.3.1. Why is BIOS supported partition limited to 2TB?
+
+The organization of the partition table in MBR limits the maximum addressable storage space of a partitioned disk to 2 TiB (2^32 * 512 bytes). Approaches to slightly raise this limit utilizing 32-bit arithmetic or 4096-byte sectors are not officially supported.
+Therefore, the MBR-based partition scheme is in the process of being superseded by the **GUID Partition Table (GPT)** scheme in new computers. A GPT can co-exist with an MBR in order to provide some limited form of backward compatibility for older systems.
+
+## 2. Boot Process
 
 Originally, BIOS firmware was stored in a ROM chip on the PC motherboard. In later computer systems the BIOS contents are stored on Flash Memory (or NVRAM) so it can be rewritten without removing the chip from mother board.
 
 Early Intel processors started at physical address 000FFFF0h.
-
-### 1.3. Master Boot Record
-
-## 2. Boot Process
