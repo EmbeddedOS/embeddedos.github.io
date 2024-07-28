@@ -316,3 +316,43 @@ nasm -f bin -o boot.bin boot.asm
 ```
 
 ### 3.2. Second-stage bootloader implementation
+
+After MBR pass the control to second-stage bootloader. The physical memory:
+
+```text
+ ___________________
+|                   | Max memory.
+|                   |
+|        Free       | -> We will use this region for kernel code.
+|                   |
+|___________________|0x010000
+|      Reserved     |
+|___________________| 0x8000
+|        Free       |
+|___________________|
+|                   |
+|    Second-Stage   |
+|      Loader       |
+|___________________| 0x7E00
+|                   |
+|     MBR code      | 
+|___________________| 0x7C00
+|                   |
+|      Free         | -> We used this region for stack.
+|                   |
+|-------------------|
+| BIOS data vectors |
+|-------------------| 0
+```
+
+Now look back to our responsibility:
+
+- Determine where your kernel is located on the boot partition.
+- Load the kernel image into memory.
+- Enable Protected mode.
+- Preparing the runtime environment for the kernel.
+- Pass the control to kernel.
+
+```nasm
+
+```
