@@ -141,18 +141,49 @@ Originally, BIOS firmware was stored in a ROM chip on the PC motherboard. In lat
 
 Early Intel processors started at physical address 000FFFF0h. Systems with later processors provide logic to start running the BIOS from the system ROM.
 
-- `cold boot`: system has been powered up or the reset button was pressed.
-- `warm boot`: Ctrl + Alt + Delete was pressed.
+- **Cold boot**: system has been powered up or the reset button was pressed.
+- **Warm boot**: Ctrl + Alt + Delete was pressed.
 
 If the system has a cool boot, the full POST is run. Otherwise, a special flag value stored in **Nonvolatile BIOS memory** tested by the BIOS allows bypass of the lengthy POST and memory detection.
 
-### 2.2. Boot process
+### 2.2. BIOS loads MBR
 
-After POST, the BIOS calls `INT 0x19` to start booting processing. When `INT 0x19` is called, the BIOS attempts to locate the `boot loader` software (Master Boot Record) on a `boot device` such as a hard disk, a floppy disk, CD or DVD. It loads and executes the first boot software it finds, giving the control to it.
+After POST, the BIOS calls `INT 0x19` to start booting processing. When `INT 0x19` is called, the BIOS attempts to locate the **boot loader** software (Master Boot Record) on a **boot device** such as a hard disk, a floppy disk, CD or DVD. It loads and executes the first boot software it finds, giving the control to it.
 
 The BIOS uses the boot devices set in the **Nonvolatile BIOS memory**. It checks each device in order to see if it is bootable by **attempting to load the first sector (boot sector)**. If the sector cannot be read, the BIOS proceeds to the next device. If the sector is read successfully, BIOS checks for the boot sector signature `0x55AA` in the end of sector.
 
-> The boot signature number `0x55AA` is also called `magic number`. It's in the last 2 bytes of boot sector.
+> The boot signature number `0x55AA` is also called **magic number**. It's in the last 2 bytes of boot sector.
 {: .prompt-info }
 
-When a bootable device is found, the BIOS transfer control to the loaded sector.
+When a bootable device is found, the BIOS load the boot sector into memory at `0x0000:0x7c00`. Execution is then transferred to the freshly loaded boot record. On a floppy disk, all 512 bytes of the boot record may contain executable code. On a hard drive, the MBR holds executable code at offset `0x0000` - `0x01BD`, followed by table entries for the four primary partitions, using sixteen bytes per entry (`0x01BE` - `0x01FD`), and the the two byte signature (`0x01FE` - `0x01FF`).
+
+A MBR memory layout:
+
+```text
+ ___________________________              
+| 446 bytes execution code  | 0x0000
+|                           |
+|     boot loader code      |
+|                           |
+|                           |
+|___________________________| 0x01BD
+|      64-bytes primary     | 0x01BE
+|  partition table entries  |
+|                           |
+|___________________________| 0x01FD
+|   2-bytes MBR signature   | 0x01FE
+|___________________________| 0x01FF
+```
+
+#### 2.2.1. Boot environment
+
+The environment for the boot program:
+
+- CPU is in real mode.
+- General purpose and segment registers are undefined, except `SS`, `SP`, `CS` and `DL`.
+- `CS:IP` always points to physical address `0x07C00`. **That means CPU will alway start execution your boot loader from this address**. Because boot programs are always loaded at this fixed address, there is no need for a boot program to be relocatable.
+- `DL` contain the drive number, as used with `INT 13H`, of the boot device.
+- `SS:SP` points to a valid stack that is presumably large enough to support hardware interrupts, but otherwise `SS` and `SP` are undefined. **The boot program must set up its own stack** because the size of the stack set up by BIOS is unknown and its location is likewise variable. You can read, but the more easier way is setup new location yourself.
+- All BIOS services are available, and the memory below address `0x00400` contains the **Interrupt Vector Table**.
+
+### 2.3. Bootloader load the kernel

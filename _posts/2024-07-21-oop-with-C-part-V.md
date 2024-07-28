@@ -8,6 +8,9 @@ date: 2024-07-21 5:00:00 +0800
 categories: [Design Pattern, OOP-C]
 tags: [Design Pattern, OOP, C, CONTAINER_OF]
 pin: true
+image:
+  path: assets/img/oop.jpg
+  alt: Object Oriented Programming.
 ---
 
 ## 1. Polymorphism
