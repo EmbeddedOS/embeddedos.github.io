@@ -187,3 +187,33 @@ The environment for the boot program:
 - All BIOS services are available, and the memory below address `0x00400` contains the **Interrupt Vector Table**.
 
 ### 2.3. Bootloader load the kernel
+
+The bootloader ultimately has to bring the kernel (and all the kernel needs to bootstrap) in memory, switch to an environment that the kernel will like and then transfer control to the kernel.
+
+#### 2.3.1. How does Bootloader load the kernel?
+
+If we boot from a hard drive, we have only 446 bytes available for your boot record. The todo list before the kernel can run is not much:
+
+- Determine which partition to boot from.
+- Determine where your kernel is located on the boot partition.
+- Load the kernel image into memory.
+- Enable Protected mode.
+- Preparing the runtime environment for the kernel.
+
+But it's hard to finish all the list task with only 446 bytes. Other problem is there are somethings you can not do with C: Manipulate segment selectors, stack pointer, loading GDT also require special opcodes which are not available within C. (You can implement **Inline Assembly**).
+
+There are several approaches:
+
+- **Geek loading**: Squeeze everything from the list into the boot record. This is next to impossible, and no-space for error handling, etc.
+- **One-stage loading**: Write a stub program for making the switch, and link that in front of your kernel image. Boot record loads kernel image (below the 1mb memory mark, because that's the upper limit of real mode), jump into the stub, stub makes the switch to Protected mode and runtime preparations, jumps into kernel proper.
+- **Two-stage loading**: Write a separate stub program which is loaded below the 1MB memory mark, and does everything in the list.
+
+#### 2.3.2. Where will you load your kernel?
+
+You'll have to decide where in memory you are going to load your kernel. In real mode, the easiest is to stay below the 1MB barrier, which means you have 512 bytes of memory to load things. You may wish the kernel to be loaded at a well-known position, say `0x10000` physical (`es=0x1000`, `bx=0` when calling `INT 13H`).
+
+If your kernel is bigger (or is expecting to grow bigger) than this, you should prefer to have the kernel above the 1MB barrier, which means you need to activate **A20 gate** (You have more 4 bits for addressing: 2^20) and switch to Unreal mode to load the kernel.
+
+#### 2.3.3. How do I actually load bytes?
+
+BIOS interrupt `13H`. To read from the hard drive, you probably want `int 13h`, `ah=0x42`, drive number `0x80` that uses simple LBA addressing.
