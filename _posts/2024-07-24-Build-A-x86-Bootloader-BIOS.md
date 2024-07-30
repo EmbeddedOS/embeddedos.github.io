@@ -322,19 +322,13 @@ After MBR pass the control to second-stage bootloader. The physical memory layou
 ```text
  ___________________
 |        Free       | -> We will use this region for Protected Mode kernel.
-|___________________|0x010000
-|        Free       |
-|___________________|
-|                   |
+|___________________| 0x010000
 |    Second-Stage   |
 |      Loader       |
 |___________________| 0x7E00
-|                   |
 |     MBR code      | 
 |___________________| 0x7C00
-|                   |
 |      Free         | -> We used this region for stack.
-|                   |
 |-------------------|
 | BIOS data vectors |
 |-------------------| 0
