@@ -1,5 +1,5 @@
 ---
-title: 'Build a bootloader for your x86 Operating System: BIOS (Legacy)'
+title: 'Build your own bootloader for x86 OS: BIOS (Legacy)'
 description: >-
   Bootloader is a piece of code that is executed once the system is booted. Let see how we use BIOS to load our bootloader and boot system.
   
@@ -160,7 +160,7 @@ When a bootable device is found, the BIOS load the boot sector into memory at `0
 A MBR memory layout:
 
 ```text
- ___________________________              
+ ___________________________
 | 446 bytes execution code  | 0x0000
 |                           |
 |     boot loader code      |
@@ -317,7 +317,15 @@ nasm -f bin -o boot.bin boot.asm
 
 ### 3.2. Second-stage bootloader implementation
 
-After MBR pass the control to second-stage bootloader. The physical memory layout:
+Now we're able to run second-stage bootloader, look back to our responsibility:
+
+- Determine where your kernel is located on the boot partition.
+- Load the kernel image into memory.
+- Enable Protected mode.
+- Preparing the runtime environment for the kernel.
+- Pass the control to kernel.
+
+After MBR pass the control to second-stage bootloader. The physical memory layout look this:
 
 ```text
  ___________________
@@ -334,13 +342,22 @@ After MBR pass the control to second-stage bootloader. The physical memory layou
 |-------------------| 0
 ```
 
-Now look back to our responsibility:
+We have free-region upper `0x10000` address, so we will spend 5 sectors (after 5 sectors of our second-stage bootloader) for our dummy kernel and load it into the `0x10000` address in physical memory.
 
-- Determine where your kernel is located on the boot partition.
-- Load the kernel image into memory.
-- Enable Protected mode.
-- Preparing the runtime environment for the kernel.
-- Pass the control to kernel.
+> In our example, the kernel do nothing but print some characters, so we don't need to spend large memory for it (`5 * 512 = 2560` bytes). But in real life, the kernel may more bigger, you can consider load it into bigger free memory region. For example, in modern Linux Kernel (>= 2.02), Protected Mode kernel is loaded into `0x100000`
+{: .prompt-tip }
+
+A bit about Protected Mode: Protect Mode is the main operating mode of modern Intel Processors since the 80286. Enable Protected Mode unleashes the real power of your CPU:
+
+- Allows working with several virtual address spaces (each of which has a maximum of 4GB of addressable memory).
+- Enables the system to enforce strict memory and hardware I/O protection as well as restricting the available instruction set via Rings.
+
+- To enable protect mode:
+  - Disable interrupts.
+  - Load Global Descriptor Table with segment descriptor suitable for code and data.
+  - Set bit PE in `cr0` to enable protected mode.
+
+Look at our `loader.asm` code:
 
 ```nasm
 [BITS 16]
@@ -458,6 +475,8 @@ PMEntry:
 
 ### 3.3. Simple kernel in C
 
+Our kernel do nothing but print the `K` character to determine it's running.
+
 ```c
 void main()
 {
@@ -467,22 +486,72 @@ void main()
 
 ### 3.3. Building and running system
 
-```make
-all:
-	nasm -f bin -o boot.bin boot.asm
-	nasm -f bin -o loader.bin loader.asm
-	dd if=boot.bin of=boot.img bs=512 count=1 conv=notrunc
-	dd if=loader.bin of=boot.img bs=512 count=5 seek=1 conv=notrunc
+#### 3.1. Create a disk image
 
-	gcc -m32 -ffreestanding -c kernel.c -o kernel.o -fno-pie
-	ld -m elf_i386 -o kernel.bin kernel.o -nostdlib --oformat=binary -Ttext=0x10000
+Using `bximage` to create a quick hard disk image:
 
-	dd if=kernel.bin of=boot.img bs=512 count=5 seek=6 conv=notrunc
-	dd if=/dev/null of=boot.img bs=512 count=5 seek=11 conv=notrunc
-
-clean:
-	rm -f *.bin *.img *.o *.a
+```bash
+bximage << EOF
+1
+hd
+flat
+512
+10
+boot.img
+EOF
 ```
 
+What it's do: create hard disk image `boot.img` with sector size is 512 bytes and disk size is 10MB (20 sectors).
 
+#### 3.2. Building components
 
+To assemble MBR bootloader and second stage bootloader we using `nasm`. We use `dd` to copy our components to the disk image. So the disk image look like this:
+
+```text
+ _____  _____  _____  _____  _____  _____  _____  _____  _____  _____  _____  _____ 
+|  1  ||  2  ||  3  ||  4  ||  5  ||  6  ||  7  ||  8  ||  9  || 10  || 11  || ... |
+|_____||_____||_____||_____||_____||_____||_____||_____||_____||_____||_____||_____|
+  /\   \________________________________/ \________________________________/
+  ||                    /\                              /\
+  ||                    ||                              ||
+  MBR        Second Stage Boot-loader                 Kernel
+```
+
+First sector is for MBR, next five sectors for Second Stage Boot-loader binary and next five sectors for our kernel.
+
+```make
+all:
+    nasm -f bin -o boot.bin boot.asm
+    nasm -f bin -o loader.bin loader.asm
+    dd if=boot.bin of=boot.img bs=512 count=1 conv=notrunc
+    dd if=loader.bin of=boot.img bs=512 count=5 seek=1 conv=notrunc
+
+    gcc -m32 -ffreestanding -c kernel.c -o kernel.o -fno-pie
+    ld -m elf_i386 -o kernel.bin kernel.o -nostdlib --oformat=binary -Ttext=0x10000
+
+    dd if=kernel.bin of=boot.img bs=512 count=5 seek=6 conv=notrunc
+    dd if=/dev/null of=boot.img bs=512 count=1 seek=11 conv=notrunc
+
+clean:
+    rm -f *.bin *.img *.o *.a
+```
+
+#### 3.3. Running our OS
+
+To run our OS, we can format a hard disk device to our image, and booting with real system:
+
+```bash
+sudo dd if=boot.img of=/dev/sdb
+```
+
+Another choice is using QEMU to boot with a bootable hard disk image:
+
+```bash
+qemu-system-i386 -hda boot.img
+```
+
+And check the result, our kernel is running and print `K` character.
+
+![Kernel Running](assets/img/Legacy_BIOS_run_kernel.png)
+
+That's it for our second stage bootloader I hope you learn something.
