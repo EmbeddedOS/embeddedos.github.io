@@ -554,4 +554,4 @@ And check the result, our kernel is running and print `K` character.
 
 ![Kernel Running](assets/img/Legacy_BIOS_run_kernel.png)
 
-That's it for our second stage bootloader I hope you learn something.
+That's all for our second stage bootloader 😛 I hope you learn something.
