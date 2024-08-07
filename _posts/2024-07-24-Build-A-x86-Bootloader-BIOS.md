@@ -530,7 +530,7 @@ all:
     ld -m elf_i386 -o kernel.bin kernel.o -nostdlib --oformat=binary -Ttext=0x10000
 
     dd if=kernel.bin of=boot.img bs=512 count=5 seek=6 conv=notrunc
-    dd if=/dev/null of=boot.img bs=512 count=1 seek=11 conv=notrunc
+    dd if=/dev/zero of=boot.img bs=512 count=1 seek=11 conv=notrunc
 
 clean:
     rm -f *.bin *.img *.o *.a
