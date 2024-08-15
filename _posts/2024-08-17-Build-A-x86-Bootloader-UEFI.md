@@ -36,3 +36,32 @@ Several technical advantages over a BIOS:
 - **Python**.
 - Modular design.
 - Backward and forward compatibility.
+
+### 1.2. Compatibility
+
+#### 1.2.1. Processor compatibility
+
+Standard PC BIOS is limited to a 16 bit processor mode and 1 MB of addressable memory space, resulting from the design based on the IBM 5150 that used a 16-bit Intel 8080 Processor.
+
+In comparison, the processor mode in a UEFI environment can be either 32-bit (IA-32, AAarch32) or 64 bit (x86-64, Itanium, and AArch64). 64 bit UEFI firmware supported **long mode**, which allows application in the pre-boot environment to use 64-bit addressing to get direct access to all of the machine's memory.
+
+UEFI requires the firmware and the OS loader (or kernel) to be **size-matched**; That is, 64-bit UEFI firmware can only load 64-bit OS, and the same applies to 32-bit. After the kernel take control it can change the processor mode if desires.
+
+#### 1.2.2. Disk Device Compatibility
+
+In addition to the standard PC disk partition scheme that uses a Master Boot Record (MBR), UEFI also works with the **GUID Partition Table** partitioning scheme, which is free from many of the limitations of MBR. The MBR limits on number and size of disk partitions are released. GPT allows for a maximum disk and partition size of 8 ZiB (8 * 2 ^ 70).
+
+#### 1.2.3. Linux
+
+Option `CONFIG_EFI_PARTITION` enable supporting for GPT in Linux, this allows Linux to recognize and use GPT disks after the system firmware passes control over the system to Linux.
+
+For reverse compatibility, Linux can use GPT disks in BIOS-based systems for both data storage and booting, as both GRUB 2 and Linux are **GPT-aware**.
+
+### 1.3. Features
+
+#### 1.3.1. Services
+
+EFI defines two types of services: **boot services** and **runtime services**.
+
+- Boot services are available only while the firmware owns the platform (i.e. before the `ExitBootServices()` call), and they include text and graphical consoles on various devices, and bus, block and file services.
+- Runtime services are still accessible while the OS is running; they include services such as date, time and NVRAM access.
