@@ -61,7 +61,30 @@ For reverse compatibility, Linux can use GPT disks in BIOS-based systems for bot
 
 #### 1.3.1. Services
 
-EFI defines two types of services: **boot services** and **runtime services**.
+EFI defines two types of services: **boot services** and **runtime services**. Boot services are available only while the firmware owns the platform (i.e. before the `ExitBootServices()` call), and they include text and graphical consoles on various devices, and bus, block and file services. Runtime services are still accessible while the OS is running; they include services such as date, time and NVRAM access.
 
-- Boot services are available only while the firmware owns the platform (i.e. before the `ExitBootServices()` call), and they include text and graphical consoles on various devices, and bus, block and file services.
-- Runtime services are still accessible while the OS is running; they include services such as date, time and NVRAM access.
+- Graphics Output Protocol (GOP) services: The Graphics Output Protocol (GOP) provides runtime services; The OS is permitted to directly write to the frame-buffer provided by GOP during runtime mode.
+- UEFI Memory Map Service.
+- SMM services.
+- ACPI services.
+- SMBIOS services.
+- DeviceTree Services (For RISC processors).
+- Variable services:
+  - UEFI variables provide a way to store data, in particular non-volatile data.
+  - Some UEFI variables are shared between platform firmware and OSes.
+  - Variable namespaces are identified by GUIDs, and variables are key/value pair.
+  - For example, UEFI variables can be used to keep crash messages in NVRAM, after a crash for the Operating system to retrieve after a reboot.
+- Time services:
+  - UEFI provides time services. Time services include support for time zone and daylight saving fields, which allow the hardware real-time clock to be set to local time or RTC.
+
+#### 1.3.2. Applications
+
+Beyond loading an OS, UEFI can run **UEFI applications**, which reside as files on the EFI system partition. They can be executed from the UEFI Shell, by the firmware's boot manager, ot by other UEFI applications.
+
+UEFI applications can be developed and installed independently of the Original Equipment Manufactures (OEMs).
+
+A type of UEFI application is an OS boot loader such as GRUB, rEFInd, Gummiboot, and Windows Boot Manager, which loads some OS files into memory and executes them. Also, an OS bootloader can provide a user interface to allow the selection of another UEFI application to run. Utilities like the UEFI Shell are also UEFI applications.
+
+#### 1.3.3. Protocols
+
+EFI defines protocols as a set of software interfaces used for communication between two binary modules. All EFI drivers must provide services to others via protocols. The EFI protocols are similar to the BIOS interrupt calls.
