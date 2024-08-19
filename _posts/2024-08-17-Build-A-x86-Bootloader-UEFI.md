@@ -88,3 +88,42 @@ A type of UEFI application is an OS boot loader such as GRUB, rEFInd, Gummiboot,
 #### 1.3.3. Protocols
 
 EFI defines protocols as a set of software interfaces used for communication between two binary modules. All EFI drivers must provide services to others via protocols. The EFI protocols are similar to the BIOS interrupt calls.
+
+#### 1.3.4. Device Drivers
+
+In additional to standard ISA Instruction Set Architecture-specific device drivers, EFI provides for **a ISA-independent device driver** stored in Non-Volatile Memory as **EFI byte code** or **EBC**. System firmware has an interpreter for EBC images.
+
+Some architecture-specific (non-EFI Byte Code) EFI drivers for some device types can have interfaces for use by the OS. This allows the OS to rely on EFI for drivers to perform basic graphic and network functions before, and if, Operating-System-Specific drivers are loaded.
+
+In other cases, the EFI driver can be filesystem drivers that allow for booting from other types of disk volumes.
+
+#### 1.3.5. Graphics features
+
+The EFI 1.0 specification defined a UGA (Universal Graphic Adapter) protocol as a way to support graphics features.
+The UEFI 2.1 defined a **Human Interface Infrastructure** to manage user input, localized strings, fonts, and forms.
+
+Most early UEFI firmware implementations were console-based. Today many UEFI firmware implementations are GUI-based.
+
+#### 1.3.5. EFI system partition
+
+An EFI system partition (ESP), is a **data storage device partition** that is used computers adhering to the UEFI specification. Accessed by the UEFI firmware when a computer is powered up, it stores UEFI applications and the files these applications need to run, **including OS bootloader**. Supported partition table schemes include MBR and GPT, as well as **El Torito** volumes on optical discs. For use on ESPs, UEFI defines a specific version of the FAT file system, which is maintained as part of the UEFI specification and independently from the original FAT specification, including the FAT32, FAT16, and FAT12 file systems. The ESP also provides space for a boot sector as part of the backward BIOS compatibility.
+
+#### 1.3.6. Booting
+
+##### 1.3.6.1. UEFI booting
+
+Unlike the legacy PC BIOS, UEFI does not rely on boot sectors, defining instead a boot manager as part of the UEFI specification. When a computer is powered on, the boot manager checks the boot configuration and, based on its settings, then executes the specified OS boot-loader or OS kernel. The boot configuration is defined by variables stored in NVRAM, including variables that indicate the file system paths to OS loaders or OS kernels.
+
+OS boot loader can be automatically detected by UEFI, which enables easy booting from removable devices such as USB flash drives. This automated detection relies on standardized file paths to the OS boot-loader, with the path varying depending on the computer architecture. The format of the file path is defined as: `<EFI_SYSTEM_PARTITION>\EFI\BOOT\BOOT<MACHINE_TYPE_SHORT_NAME>.EFI`; for example, the file path to the OS loader on an x86-64 system is `\efi\boot\bootx64.efi` and `\efi\boot\bootaa64.efi` on ARM64 architecture.
+
+Booting UEFI systems from GPT-partitioned disks is commonly called UEFI-GPT booting. Despite the fact that the UEFI specification requires MBR partition tables to be fully supported, some UEFI firmware implementations immediately switch to the BIOS based CSM booting depending on the type of boot disk's partition table, effectively preventing UEFI booting to be performed from EFI System Partition on MBR-partitioned disks. Such a boot scheme is commonly called UEFI-MBR.
+
+It is also common for a boot manager to have a textual user interface so the user can select the desired OS (or setup utility) from a list of available boot options.
+
+##### 1.3.6.2. CSM booting
+
+##### 1.3.6.3. Networking booting
+
+##### 1.3.6.4. Secure Boot
+
+### 1.4. UEFI Shell
