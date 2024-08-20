@@ -122,8 +122,55 @@ It is also common for a boot manager to have a textual user interface so the use
 
 ##### 1.3.6.2. CSM booting
 
+To ensure backward compatibility, UEFI firmware implementations on PC-class machines could support booting in legacy BIOS mode from MBR partitioned disks through the **Compatibility Support Module (CSM)** that provides legacy BIOS compatibility.
+
+BIOS-style booting from MBR-partitioned disks is commonly called BIOS-MBR, regardless of it being performed on UEFI or legacy BIOS-based systems. Furthermore, booting legacy BIOS-based systems from GPT disks is also possible, and such a boot scheme is commonly called BIOS-GPT.
+
+The Compatibility Support Module allows OSes and some legacy option ROMs that do not support UEFI to still be used.
+
 ##### 1.3.6.3. Networking booting
+
+The UEFI specification includes support for booting over network via the **Pre-boot eXecution Environment** (PXE). PXE booting network protocols include internet protocol (IPv4 and Ipv6), User Data-gram Protocol (UDP), Dynamic Host Configuration Protocol (DHCP), TFTP, and iSCSI.
+
+OS images can be remotely stored on Storage Area Networks (SANs).
+
+Version 2.5 of the UEFI specification adds support for accessing boot images over the HTTP.
 
 ##### 1.3.6.4. Secure Boot
 
-### 1.4. UEFI Shell
+The UEFI specification defines a protocol known as **Secure Boot**, which can secure the boot process by preventing the loading of UEFI drivers or OS boot loaders that are not **singed** with an acceptable **digital signature**.
+
+When Secured Boot is enabled, it is initially placed in **setup** mode, which allows a public key from known as the **Platform key** (PK) to be written to the firmware. Once the key is written, Secure Boot enters **User mode**, where only UEFI drivers and OS boot-loaders signed with the **Platform Key** can be loaded by the firmware. Additional **Key Exchange Keys** (KEK) can be added to a database stored in memory to allow other certificates to be used, but they must still have a connection to the private portion of the platform key.
+
+Secure Boot can also be placed in **Custom** mode, where additional public keys can be added to the system that do not match the private key.
+
+#### 1.3.7. UEFI Shell
+
+UEFI provides a **shell environment**, which can be used to execute other UEFI applications, including UEFI bootloader. Apart from that, commands available in the UEFI shell can be used for obtaining various other information about the system or the firmware, including getting the memory map (`memmap`), modifying boot manager variables (`bcfg`), running partitioning programs (`diskpart`), loading UEFI drivers, and editing text files (`edit`).
+
+Methods used for launching UEFI shell depend on the manufacture and model of the system motherboard. e.g. x86: `<EFI_SYSTEM_PARTITION>/SHELLX64.EFI`, some other system have an already embedded UEFI shell which can be launched by appropriate press combinations.
+
+#### 1.3.8. UEFI capsule
+
+UEFI capsule defines a Firmware-to-OS firmware update interface, marketed as modern and secure.
+
+#### 1.3.9. Hardware
+
+Like BIOS, UEFI initializes and tests system hardware components (e.g. Memory Training, PCIe link training, USB training), and then loads the bootloader from a mass storage device or through a network connection. In x86 systems, the UEFI firmware is usually stored in the NOR flash chip of the motherboard.
+
+### 1.4. Classes
+
+UEFI machines can have one of the following classes, which were used to help ease the transition to UEFI:
+
+- Class 0: Legacy BIOS.
+- Class 1: UEFI with a CSM interface and no external UEFI interface.
+- Class 2: UEFI with a CSM and external interfaces, eg: UEFI boot.
+- Class 3: UEFI without a CSM interface and with an external UEFI interface.
+- Class 3+: UEFI class 3 that has Secure Boot enabled.
+
+### 1.5. Boot stages
+
+- 1. SEC - Security Phase: This is the first stage of the UEFI boot but may have platform specific binary code that precedes it (e.g: Intel ME, CPU microcode).
+  - It consists of minimal code written in assembly language for the specific architecture.
+  - It initializes a temporary memory (often CPU cache as RAM, or SoC on-chip SRAM) and serves as the system's software root of trust with the option of verifying PEI before hand-off.
+- 2. PEI - Pre-EFI Initialization
