@@ -170,7 +170,36 @@ UEFI machines can have one of the following classes, which were used to help eas
 
 ### 1.5. Boot stages
 
-- 1. SEC - Security Phase: This is the first stage of the UEFI boot but may have platform specific binary code that precedes it (e.g: Intel ME, CPU microcode).
+- Step 1: **SEC - Security Phase**:
+  - This is the first stage of the UEFI boot but may have platform specific binary code that precedes it (e.g: Intel ME, CPU microcode).
   - It consists of minimal code written in assembly language for the specific architecture.
   - It initializes a temporary memory (often CPU cache as RAM, or SoC on-chip SRAM) and serves as the system's software root of trust with the option of verifying PEI before hand-off.
-- 2. PEI - Pre-EFI Initialization
+- Step 2: **PEI - Pre-EFI Initialization**:
+  - The second stage of UEFI boot consists of a dependency-aware dispatcher that loads and runs PEI modules to handle early hardware initialization task such as main memory initialization (initialize memory controller and DRAM) and firmware recovery operations.
+  - Additionally, it is responsible for discovery of the current boot mode and handling many ACPI S3 operations.
+- Step 3: **DXE - Driver Execution Environment**:
+  - This stage consist of C modules and a dependency-aware dispatcher. With main memory now available, CPU, chipset, main-board and other I/O devices are initialized in DXE and BDS.
+- Step 4: **BDS - Boot Device Select**:
+  - BDS is a part of the DXE. In this stage, boot devices are initialized, UEFI drivers or Option ROMs of PCI devices are executed according to system configuration, and boot options are processed.
+- Step 5: **TSL - Transient System Load**:
+  - This is the stage between boot device selection and hand-off to the OS. At this point one may enter UEFI shell, or execute an UEFI application such as the OS boot loader.
+- Step 6: **RT - Runtime**:
+  - The UEFI hands off to the OS after `ExitBootServices()` is executed. A UEFI compatible OS is now responsible for exiting boot services triggering the firmware to unload all no longer needed code and data, leaving only runtime services code/data, e.g. SMM and ACPI. A typical modern OS will prefer to use its own programs (such as kernel drivers) to control hardware devices.
+
+### 1.6. Applications development
+
+**EDK2 Application Development Kit** (EADK) makes it possible to use standard C library functions in UEFI applications. EADK can be freely downloaded from the Intel's TianoCore UDK / EDK2 SourceForge project. Github: [EADK](https://github.com/tianocore/edk2)
+
+A minimalistic `hello world` C program written using EADK looks similar to its usual C counterpart:
+
+```c
+#include <Uefi.h>
+#include <Library/UefiLib.h>
+#include <Library/ShellEntryLib.h>
+
+EFI_STATUS EFIAPI ShellAppMain(IN UINTN Argc, IN CHAR16 **Argv)
+{
+    Print(L"hello, world\n");
+    return EFI_SUCCESS;
+}
+```
