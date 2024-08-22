@@ -219,3 +219,31 @@ otherwise for emulation and virtual machines, we need an **OVMF.fd** firmware im
 ```bash
 apt-get install ovmf
 ```
+
+#### 2.1.2. UEFI vs legacy BIOS
+
+A common misconception is that UEFI and BIOS are mutual exclusion. In reality, both legacy motherboards and UEFI-based motherboards both include BIOS ROMs. The differences are in where they find the bootloader/OS, how they prepare the system before executing it, and what convenience functions they provide.
+
+```text
+|                |             Legacy BIOS                  |                    UEFI                    |
+|----------------|------------------------------------------|--------------------------------------------|
+|Platform        | Performs all the usual platform init(    | Perform same steps like BIOS but it also   |
+|Initialization  | memory control config, PCI bus config,   | enables the A20 gate and Protected Mode    |
+|                | BAR mapping, Graphic cards, etc.) and    | (for i386 processors) or Long Mode (x64    |
+|                | then to drop to real mode env. The boot- | processors).                               |
+|                | loader must enable A20, config GDT, IDT, |                                            |
+|                | switch to protected mode, config paging  |                                            |
+|                | and switch to long mode (x86-64 CPUs).   |                                            |
+|----------------|------------------------------------------|--------------------------------------------|
+| Boot           | BIOS loads a 512 byte flat binary blob   | UEFI firmware loads an arbitrary sized UEFI|
+| Mechanism      | from the MBR of the boot device into     | application (e relocatable PE executable   |
+|                | memory at physical address 0x7C00 and    | file) from a FAT partition on a GPT or MBR |
+|                | jumps to it. The Bootloader CAN'T return | partitioned boot device to some address    |
+|                | back to BIOS.                            | selected at run-time. Then it calls that   |
+|                |                                          | that application's main entry point.       |
+|                |                                          | The application can continue booting or    |
+|                |                                          | return control to the UEFI, which continue |
+|                |                                          | searching for another boot-device or bring |
+|                |                                          | up a diagnostic menu.                      |
+|----------------|------------------------------------------|--------------------------------------------|
+```
