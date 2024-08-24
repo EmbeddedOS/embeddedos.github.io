@@ -235,8 +235,8 @@ A common misconception is that UEFI and BIOS are mutual exclusion. In reality, b
 |                | switch to protected mode, config paging  |                                            |
 |                | and switch to long mode (x86-64 CPUs).   |                                            |
 |----------------|------------------------------------------|--------------------------------------------|
-| Boot           | BIOS loads a 512 byte flat binary blob   | UEFI firmware loads an arbitrary sized UEFI|
-| Mechanism      | from the MBR of the boot device into     | application (e relocatable PE executable   |
+| Boot Mechanism | BIOS loads a 512 byte flat binary blob   | UEFI fw loads an arbitrary sized UEFI      |
+|                | from the MBR of the boot device into     | application (e relocatable PE executable   |
 |                | memory at physical address 0x7C00 and    | file) from a FAT partition on a GPT or MBR |
 |                | jumps to it. The Bootloader CAN'T return | partitioned boot device to some address    |
 |                | back to BIOS.                            | selected at run-time. Then it calls that   |
@@ -246,4 +246,50 @@ A common misconception is that UEFI and BIOS are mutual exclusion. In reality, b
 |                |                                          | searching for another boot-device or bring |
 |                |                                          | up a diagnostic menu.                      |
 |----------------|------------------------------------------|--------------------------------------------|
+| System         | A bootloader itself scans memory for     | UEFI fw calls a UEFI application's entry   |
+| Discovery      | structures like EBDA, SMBIOS, and ACPI   | point function, it passes a "System Table" |
+|                | tables. It uses PIO to talk to the root  | structure, which contains pointers to all  |
+|                | PCI controller and scan the PCI bus.     | of the system's ACPI tables, memory map,   |
+|                | Redundant tables may be present in       | and other information relevant to an OS.   |
+|                | memory and the boot-loader can choose    |                                            |
+|                | which to use.                            |                                            |
+|----------------|------------------------------------------|--------------------------------------------|
+| Convenience    | A legacy BIOS hooks a variety of         | UEFI fw establishes many callable functions|
+| Functions      | interrupts which a bootloader can trigger| in memory, which are grouped into sets     |
+|                | to access system resources like disks and| called "protocols" and discoverable through|
+|                | the screen. These interrupts are NOT     | the "System Table".                        |
+|                | STANDARDIZED, each interrupt uses a      | The behavior of each function in each      |
+|                | different register passing convention.   | "protocol" is defined by specification.    |
+|                |                                          | UEFI applications can define their own     |
+|                |                                          | "protocols" and persist them in memory for |
+|                |                                          | other UEFI applications to use.            |
+|                |                                          | Calling functions follow modern calling    |
+|                |                                          | convention that supported by many C        |
+|                |                                          | compilers.                                 |
+|----------------|------------------------------------------|--------------------------------------------|
+| Development    | Can be developed in any env that can     | Can be developed in any language that can  |
+| Environment    | generate flat binary images: NASM, GCC,  | be compiled and linked into a PE executable|
+|                | etc.                                     | file and supports the calling convention   |
+|                |                                          | used to access functions established in    |
+|                |                                          | memory by the UEFI fw. That means one of   |
+|                |                                          | three dev env:                             |
+|                |                                          | - EDK2: is large and complex, yet feature  |
+|                |                                          |   filled env with its own build system.    |
+|                |                                          |   Can compile UEFI applications and even   |
+|                |                                          |   UEFI fw to flash to a BIOS ROM.          |
+|                |                                          | - GNU-EFI: is a set of libs and headers for|
+|                |                                          |   compiling UEFI applications with a       |
+|                |                                          |   system's native GCC. Can't not compile   |
+|                |                                          |   UEFI fw.                                 |
+|                |                                          | - POSIX-UEFI: is very similar to GNU-EFI,  |
+|                |                                          |   but it is distributed mainly as a source,|
+|                |                                          |   not as a binary lib.                     |
+|----------------|------------------------------------------|--------------------------------------------|
 ```
+
+You should prefer `UEFI` than `BIOS` except:
+
+- You want to do it with education purpose.
+- Your targeting system is legacy and UEFI is not available.
+
+#### 2.1.3. Emulation
