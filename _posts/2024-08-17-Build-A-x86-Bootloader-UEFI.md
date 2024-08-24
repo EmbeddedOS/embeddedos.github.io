@@ -203,3 +203,19 @@ EFI_STATUS EFIAPI ShellAppMain(IN UINTN Argc, IN CHAR16 **Argv)
     return EFI_SUCCESS;
 }
 ```
+
+## 2. OSDev
+
+UEFI is a specification for x86, x86-64, ARM and Itanium platforms that defines a **software interface** between the OS and the platform firmware/BIOS.
+
+### 2.1. UEFI Basics
+
+#### 2.1.1. Download UEFI images
+
+If you choose VirtualBox for virtualization, UEFI is already included, no need to download the image manually. Just enable it.
+
+otherwise for emulation and virtual machines, we need an **OVMF.fd** firmware image. Install on Debian/Ubuntu:
+
+```bash
+apt-get install ovmf
+```
