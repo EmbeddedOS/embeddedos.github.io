@@ -107,39 +107,33 @@ UEFI can detected an OS bootloader (is stored in EFI system partition) automatic
 
 #### 1.2.2. Secure boot
 
-The UEFI specification defines a protocol known as **Secure Boot**, which can secure the boot process by preventing the loading of UEFI drivers or OS boot loaders that are not **singed** with an acceptable **digital signature**.
+UEFI Secure Boot is a "Protocol" that is defined by UEFI. UEFI Secure Boot based on **Digital Signature** scheme. ONLY drivers, bootloader, kernel with signed key can be loaded.
 
-When Secured Boot is enabled, it is initially placed in **setup** mode, which allows a public key from known as the **Platform key** (PK) to be written to the firmware. Once the key is written, Secure Boot enters **User mode**, where only UEFI drivers and OS boot-loaders signed with the **Platform Key** can be loaded by the firmware. Additional **Key Exchange Keys** (KEK) can be added to a database stored in memory to allow other certificates to be used, but they must still have a connection to the private portion of the platform key.
+UEFI that support Secure Boot is always in one of three states:
 
-Secure Boot can also be placed in **Custom** mode, where additional public keys can be added to the system that do not match the private key.
+- Setup mode: UEFI applications can change or delete Platform Keys.
+- User Mode and Secure Boot off: Applications can switch to Setup mode to configure keys.
+- User Mode and Secure Boot on: Applications must be signed to be launched.
 
 ### 1.3. EFI partition
 
-An EFI system partition (ESP), is a **data storage device partition** that is used computers adhering to the UEFI specification. Accessed by the UEFI firmware when a computer is powered up, it stores UEFI applications and the files these applications need to run, **including OS bootloader**. Supported partition table schemes include MBR and GPT, as well as **El Torito** volumes on optical discs. For use on ESPs, UEFI defines a specific version of the FAT file system, which is maintained as part of the UEFI specification and independently from the original FAT specification, including the FAT32, FAT16, and FAT12 file systems. The ESP also provides space for a boot sector as part of the backward BIOS compatibility.
+An EFI system partition (ESP), is a **data storage device partition** that is used computers adhering to the UEFI specification. Accessed by the UEFI firmware when a computer is powered up, it stores UEFI applications and the files these applications need to run, **including OS bootloader**.
+
+The ESP also provides space for a boot sector as part of the backward BIOS compatibility.
 
 ### 1.4. Services
 
-EFI defines two types of services: **boot services** and **runtime services**. Boot services are available only while the firmware owns the platform (i.e. before the `ExitBootServices()` call), and they include text and graphical consoles on various devices, and bus, block and file services. Runtime services are still accessible while the OS is running; they include services such as date, time and NVRAM access.
+EFI defines two types of services: **boot services** and **runtime services**. Boot services are available only while the firmware owns the platform (i.e. before the `ExitBootServices()` call), and they include text and graphical consoles on various devices, and bus, block and file services. Runtime services are still accessible while the OS is running; they include services such as date, time, variables (key-pair) and NVRAM access.
 
-- Graphics Output Protocol (GOP) services: The Graphics Output Protocol (GOP) provides runtime services; The OS is permitted to directly write to the frame-buffer provided by GOP during runtime mode.
-- UEFI Memory Map Service.
-- SMM services.
-- ACPI services.
-- SMBIOS services.
-- DeviceTree Services (For RISC processors).
-- Variable services:
-  - UEFI variables provide a way to store data, in particular non-volatile data.
-  - Some UEFI variables are shared between platform firmware and OSes.
-  - Variable namespaces are identified by GUIDs, and variables are key/value pair.
-  - For example, UEFI variables can be used to keep crash messages in NVRAM, after a crash for the Operating system to retrieve after a reboot.
-- Time services:
-  - UEFI provides time services. Time services include support for time zone and daylight saving fields, which allow the hardware real-time clock to be set to local time or RTC.
+For example, with variable service, UEFI variables can be used to keep crash messages in NVRAM, after a crash for the Operating system to retrieve after a reboot.
 
 ## 2. Application Development
 
 Beyond loading an OS, UEFI can run **UEFI applications**, which reside as files on the EFI system partition. They can be executed from the UEFI Shell, by the firmware's boot manager, ot by other UEFI applications.
 
-A type of UEFI application is an OS boot loader such as GRUB, rEFInd, Gummiboot, and Windows Boot Manager, which loads some OS files into memory and executes them. Also, an OS bootloader can provide a user interface to allow the selection of another UEFI application to run. Utilities like the UEFI Shell are also UEFI applications.
+A type of UEFI application is an OS boot loader such as GRUB, rEFInd, Gummiboot, and Windows Boot Manager, which loads some OS files into memory and executes them. Also, an OS bootloader can provide a user interface to allow the selection of another UEFI application to run.
+
+Utilities like the UEFI Shell are also UEFI applications.
 
 ### 2.1. Download UEFI images
 
