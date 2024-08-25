@@ -95,7 +95,7 @@ PCs are categorized as UEFI class 0, 1, 2, 3.
 - A class 0 machine is legacy system with a legacy BIOS.
 - A class 1 machine is a UEFI system, but run in (Compatibility Support Module - a specification let UEFI emulate a legacy BIOS) CSM mode, It's only UEFI "within" the BIOS.
 - A class 2 machine is a UEFI system that run **UEFI BOOT** (can launch UEFI applications), also support CSM as a option.
-- A class 3 is same class 2 but without CSM supporting.
+- A class 3 is the same class 2 but without CSM supporting.
 
 #### 1.2.1. UEFI Booting
 
@@ -103,7 +103,7 @@ UEFI specification define a **boot manager** that checks boot configurations, se
 
 The boot configurations is defined by variables stored in NVRAM (where to load kernel, bootloader, size, etc.).
 
-UEFI can detected an OS bootloader (is stored in EFI system partition) automatically by using a standardize file paths: `<EFI_SYSTEM_PARTITION>\EFI\BOOT\BOOT<MACHINE_TYPE_SHORT_NAME>.EFI`. For example, on x64L `\efi\boot\bootx64.efi` and `\efi\boot\bootaa64.efi` on ARM64 architecture.
+UEFI can detected an OS bootloader (is stored in EFI system partition) automatically by using a standardize file paths: `<EFI_SYSTEM_PARTITION>\EFI\BOOT\BOOT<MACHINE_TYPE_SHORT_NAME>.EFI`. For example, on x64 arch `\efi\boot\bootx64.efi` and `\efi\boot\bootaa64.efi` on ARM64 arch.
 
 #### 1.2.2. Secure boot
 
@@ -115,11 +115,20 @@ UEFI that support Secure Boot is always in one of three states:
 - User Mode and Secure Boot off: Applications can switch to Setup mode to configure keys.
 - User Mode and Secure Boot on: Applications must be signed to be launched.
 
-### 1.3. EFI partition
+### 1.3. EFI System Partition
 
 An EFI system partition (ESP), is a **data storage device partition** that is used computers adhering to the UEFI specification. Accessed by the UEFI firmware when a computer is powered up, it stores UEFI applications and the files these applications need to run, **including OS bootloader**.
 
 The ESP also provides space for a boot sector as part of the backward BIOS compatibility.
+
+The ESP is located at the beginning of the disk and its partition record at the beginning of the GPT. It can be formatted to any FAT file system FAT12, FAT16, FAT32.
+
+Important Files on ESP:
+
+- `FS0:\STARTUP.NSH` - An EFI Shell script, similar to MS-DOS `autoexec.bat`.
+- `FS0:\BOOTMGR.EFI` - The EFI boot manager.
+- `FS0:\BOOT\BOOTX86.EFI` - The default x86-32 bootloader.
+- `FS0:\BOOT\BOOTX64.EFI` - The default x86-64 bootloader.
 
 ### 1.4. Services
 
@@ -129,13 +138,36 @@ For example, with variable service, UEFI variables can be used to keep crash mes
 
 ## 2. Application Development
 
-Beyond loading an OS, UEFI can run **UEFI applications**, which reside as files on the EFI system partition. They can be executed from the UEFI Shell, by the firmware's boot manager, ot by other UEFI applications.
+Beyond loading an OS, UEFI can run **UEFI applications**, which reside as files on the EFI system partition. They can be executed from the UEFI Shell, by the firmware's boot manager, or by other UEFI applications.
 
-A type of UEFI application is an OS boot loader such as GRUB, rEFInd, Gummiboot, and Windows Boot Manager, which loads some OS files into memory and executes them. Also, an OS bootloader can provide a user interface to allow the selection of another UEFI application to run.
+UEFI application examples: UEFI Shell, OS bootloader like GRUB, rEFInd, Gummiboot, and Windows Boot Manager, etc.
 
-Utilities like the UEFI Shell are also UEFI applications.
+### 2.1. Developing Applications with GNU-EFI
 
-### 2.1. Download UEFI images
+GNU-EFI is a very lightweight developing environment to create UEFI applications. It is a set of libraries and headers for compiling UEFI applications with a system's native GCC.
+
+#### 2.2. Download and compile
+
+```bash
+git clone https://git.code.sf.net/p/gnu-efi/code gnu-efi
+cd gnu-efi
+make
+```
+
+The GNU-EFI includes three main components:
+
+- **Libraries**: are generated when you `make`:
+  - `crt0-efi-x86_64.o`: A CRT0 (C runtime initialization code) that will call your `efi_main` function.
+  - `libgnuefi.a`: A library contains a single function (`_relocate`) that is used by the CRT0.
+  - `libefi.a`: A library contains convenience functions like CRC computation, text printing, etc.
+- **Headers**: Convenience headers that provide structures, typedef, and constants improve readability when access UEFI resources.
+- **Linker Script**: linker script to link your application with ELF binaries.
+
+#### 2.3. Develop UEFI application: your own bootloader
+
+#### 2.4. Creating an EFI executable
+
+### 2.2. Download UEFI images
 
 If you choose VirtualBox for virtualization, UEFI is already included, no need to download the image manually. Just enable it.
 
@@ -145,4 +177,6 @@ otherwise for emulation and virtual machines, we need an **OVMF.fd** firmware im
 apt-get install ovmf
 ```
 
-#### 2.2. Emulation
+```bash
+qemu-system-x86_64 -hda hdimage.bin -pflash /usr/share/qemu/OVMF.fd
+```
