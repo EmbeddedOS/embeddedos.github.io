@@ -163,7 +163,7 @@ The GNU-EFI includes three main components:
 - **Headers**: Convenience headers that provide structures, typedef, and constants improve readability when access UEFI resources.
 - **Linker Script**: linker script to link your application with ELF binaries.
 
-#### 2.3. Develop UEFI application: your own bootloader
+#### 2.3. Develop custom bootloader
 
 #### 2.4. Creating an EFI executable
 
@@ -178,5 +178,5 @@ apt-get install ovmf
 ```
 
 ```bash
-qemu-system-x86_64 -hda hdimage.bin -pflash /usr/share/qemu/OVMF.fd
+qemu-system-x86_64 -cpu qemu64 -bios /usr/share/qemu/OVMF.fd -hda hdimage.bin
 ```
