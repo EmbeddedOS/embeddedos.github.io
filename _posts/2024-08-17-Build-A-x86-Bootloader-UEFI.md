@@ -165,7 +165,35 @@ The GNU-EFI includes three main components:
 
 #### 2.3. Develop custom bootloader
 
+```c
+// https://wiki.osdev.org/Loading_files_under_UEFI
+EFI_STATUS
+EFIAPI
+efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
+{
+  InitializeLib(ImageHandle, SystemTable);
+
+  while (1)
+  {
+    Print(L"Hello, world!\n");
+  }
+
+  return EFI_SUCCESS;
+}
+```
+
 #### 2.4. Creating an EFI executable
+
+```bash
+# Compile the application.
+gcc -Ignu-efi/inc -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-red-zone -maccumulate-outgoing-args -c main.c -o main.o
+
+# Link with UEFI libraries.
+ld -shared -Bsymbolic -Lgnu-efi/x86_64/lib -Lgnu-efi/x86_64/gnuefi -Tgnu-efi/gnuefi/elf_x86_64_efi.lds gnu-efi/x86_64/gnuefi/crt0-efi-x86_64.o main.o -o main.so -lgnuefi -lefi
+
+# Converting Shared Object to EFI executable.
+objcopy -j .text -j .sdata -j .data -j .rodata -j .dynamic -j .dynsym  -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc --target efi-app-x86_64 --subsystem=10 main.so main.efi
+```
 
 ### 2.2. Create disk images
 
@@ -262,5 +290,5 @@ qemu-system-x86_64 -cpu qemu64 -bios /usr/share/qemu/OVMF.fd
 ```
 
 ```bash
-qemu-system-x86_64 -cpu qemu64 -bios /usr/share/qemu/OVMF.fd -hda hdimage.bin
+qemu-system-x86_64 -cpu qemu64 -bios /usr/share/qemu/OVMF.fd -drive file=uefi.img,if=ide
 ```
