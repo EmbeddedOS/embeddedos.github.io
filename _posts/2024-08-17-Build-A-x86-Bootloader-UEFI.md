@@ -167,14 +167,98 @@ The GNU-EFI includes three main components:
 
 #### 2.4. Creating an EFI executable
 
-### 2.2. Download UEFI images
+### 2.2. Create disk images
+
+To launch a our UEFI application, we need to create a disk image and present it to QEMU.
+In reality, a disk image usually include an EFI system partition (contains bootloader, kernel, etc) and another partitions (for rootfs, data, etc. And kernel will take care of handling and mounting those partitions). In our system, the bootloader will only load a dummy kernel and do not thing, so we just need to create a simple disk image with EFI partition only.
+
+Create a raw image and an EFI partition on it.
+
+```bash
+# Create a raw image.
+$ dd if=/dev/zero of=uefi.img bs=512 count=93750
+
+# Create a EFI partition on the image.
+$ gdisk uefi.img
+
+GPT fdisk (gdisk) version 1.0.5
+
+Partition table scan:
+  MBR: not present
+  BSD: not present
+  APM: not present
+  GPT: not present
+
+Creating new GPT entries in memory.
+
+Command (? for help): o
+This option deletes all partitions and creates a new protective MBR.
+Proceed? (Y/N): Y
+
+Command (? for help): n
+Partition number (1-128, default 1): 
+First sector (34-93716, default = 2048) or {+-}size{KMGTP}: 
+Last sector (2048-93716, default = 93716) or {+-}size{KMGTP}: 
+Current type is 8300 (Linux filesystem)
+Hex code or GUID (L to show codes, Enter = 8300): ef00
+Changed type of partition to 'EFI system partition'
+
+Command (? for help): w
+
+Final checks complete. About to write GPT data. THIS WILL OVERWRITE EXISTING
+PARTITIONS!!
+
+Do you want to proceed? (Y/N): Y
+OK; writing new GUID partition table (GPT) to uefi.img.
+Warning: The kernel is still using the old partition table.
+The new table will be used at the next reboot or after you
+run partprobe(8) or kpartx(8)
+The operation has completed successfully.
+```
+
+Attach the image into a loopback device and mount it into our system:
+
+```bash
+# Attach the image to a loopback device.
+sudo losetup --offset 1048576 --sizelimit 46934528 /dev/loop99 uefi.img
+
+# Format into FAT32 file system format.
+sudo mkdosfs -F 32 /dev/loop99
+
+# Mount the loopback device into `/mnt` directory.
+sudo mount /dev/loop99 /mnt
+```
+
+Now we can read-write to the image via the mount point, we'll copy our UEFI applications and kernel dummy image in a directly way. If you want UEFI firmware execute your application automatically (as an OS bootloader) you can rename it to `EFI\BOOT\BOOTX64.EFI`.
+
+```bash
+sudo mkdir -p /mnt/EFI/BOOT/
+sudo cp main.efi /mnt/EFI/BOOT/BOOTX64.EFI
+sudo cp kernel.bin /mnt/EFI
+
+# Optional, if you custom your startup script.
+sudo cp startup.nsh /mnt/EFI/STARTUP.NSH
+```
+
+Unmount and detach the loopback device:
+
+```bash
+sudo umount /mnt
+sudo losetup -d /dev/loop99
+```
+
+### 2.3. Emulate
 
 If you choose VirtualBox for virtualization, UEFI is already included, no need to download the image manually. Just enable it.
 
-otherwise for emulation and virtual machines, we need an **OVMF.fd** firmware image. Install on Debian/Ubuntu:
+otherwise for emulation and virtual machines, we need an **OVMF.fd** firmware image (OVMF is a port of Intel's tianocore firmware to the qemu virtual machine). Install on Debian/Ubuntu:
 
 ```bash
+# Install the firmware.
 apt-get install ovmf
+
+# Boot system with the firmware like BIOS firmware.
+qemu-system-x86_64 -cpu qemu64 -bios /usr/share/qemu/OVMF.fd
 ```
 
 ```bash
