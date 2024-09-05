@@ -165,6 +165,9 @@ The GNU-EFI includes three main components:
 
 #### 2.3. Develop custom bootloader
 
+> GNU-EFI uses the **host** compiler, you might need additional gcc options to get ABI work. The `uefi_call_wrapper()` is a wrapper function that makes sure every ABI always work. So there is no matter what ABI your gcc is using, `uefi_call_wrapper()` always correctly translate that into UEFI ABI. Using `uefi_call_wrapper()` whenever possible.
+{: .prompt-info }
+
 ```c
 // https://wiki.osdev.org/Loading_files_under_UEFI
 EFI_STATUS
