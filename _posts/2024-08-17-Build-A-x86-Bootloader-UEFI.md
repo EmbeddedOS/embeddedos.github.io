@@ -261,6 +261,27 @@ EFI_STATUS uefi_read_file(EFI_FILE_HANDLE file_handle,
 }
 ```
 
+##### 2.3.1. Load binary kernel
+
+To load a kernel in binary format, we simply allocate the memory for kernel, and jump to the binary start as a kernel entry point:
+
+```c
+EFI_STATUS load_binary_kernel(UINT8 *buffer,
+                              UINT64 size,
+                              void **entry_point)
+{
+    UINT8 * kernel_buffer = NULL;
+    kernel_buffer = AllocatePool(size);
+    uefi_call_wrapper(CopyMem, 3, kernel_buffer, buffer, size);
+
+    *entry_point = (VOID *)kernel_buffer;
+    return EFI_SUCCESS;
+}
+```
+
+##### 2.3.2. Load ELF kernel
+
+
 #### 2.4. Creating an EFI executable
 
 ```bash
