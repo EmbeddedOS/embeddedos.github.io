@@ -438,6 +438,74 @@ EFI_STATUS load_elf_kernel(UINT8 *buffer,
 }
 ```
 
+##### 2.3.3. Build custom kernel
+
+In this blog, we focus on developing the OS loader, so for the kernel will be minimal. The kernel parameters keep basic information and services: memory map and UEFI runtime services ans graphic output protocol:
+
+```c
+typedef struct
+{
+    UINTN mm_size;
+    EFI_MEMORY_DESCRIPTOR *mm_descriptor;
+    UINTN map_key;
+    UINTN descriptor_size;
+    UINT32 descriptor_version;
+} memory_map_t;
+
+/**
+ * @brief   - Kernel boot parameters structure. This structure will be shared
+ *            with uefi os loader code. The loader will pass this param to
+ *            kernel when it's passing the control to kernel.
+ */
+typedef struct
+{
+    memory_map_t mm;
+    EFI_RUNTIME_SERVICES *runtime_services;
+    EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE graphic_out_protocol;
+    UINTN custom_protocol_data;
+} boot_params_t;
+```
+
+In the kernel source file, we change the graphic color to make sure our kernel is running:
+
+```c
+#include "kernel.h"
+
+void main(boot_params_t *params)
+{
+    UINT32 *frame_buffer = NULL;
+    UINT32 x_res = 0;
+    UINT32 y_res = 0;
+
+    /* 1. We get Graphic Output Protocol to change graphic mode in kernel code.
+     */
+    frame_buffer = (UINT32 *)params->graphic_out_protocol.FrameBufferBase;
+    x_res = params->graphic_out_protocol.Info->PixelsPerScanLine;
+    y_res = params->graphic_out_protocol.Info->VerticalResolution;
+
+    for (UINT32 y = 0; y < y_res; y++)
+    {
+        for (UINT32 x = 0; x < x_res; x++)
+        {
+            frame_buffer[x + y * x_res] = 0xFFCC2222;
+        }
+    }
+
+        for (UINT32 y = 0; y < y_res/50; y++)
+    {
+        for (UINT32 x = 0; x < x_res/50; x++)
+        {
+            frame_buffer[x + y * x_res] = 0xFFCC2222;
+        }
+    }
+
+    params->custom_protocol_data;
+}
+```
+
+##### 2.3.4. Setup environment and load the kernel
+
+
 #### 2.4. Creating an EFI executable
 
 ```bash
