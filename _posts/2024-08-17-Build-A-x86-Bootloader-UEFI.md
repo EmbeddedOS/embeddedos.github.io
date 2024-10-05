@@ -146,7 +146,7 @@ UEFI application examples: UEFI Shell, OS bootloader like GRUB, rEFInd, Gummiboo
 
 GNU-EFI is a very lightweight developing environment to create UEFI applications. It is a set of libraries and headers for compiling UEFI applications with a system's native GCC.
 
-#### 2.2. Download and compile
+### 2.2. Download and compile
 
 ```bash
 git clone https://git.code.sf.net/p/gnu-efi/code gnu-efi
@@ -163,7 +163,7 @@ The GNU-EFI includes three main components:
 - **Headers**: Convenience headers that provide structures, typedef, and constants improve readability when access UEFI resources.
 - **Linker Script**: linker script to link your application with ELF binaries.
 
-#### 2.3. Develop custom bootloader
+### 2.3. Develop custom bootloader
 
 > GNU-EFI uses the **host** compiler, you might need additional gcc options to get ABI work. The `uefi_call_wrapper()` is a wrapper function that makes sure every ABI always work. So there is no matter what ABI your gcc is using, `uefi_call_wrapper()` always correctly translate that into UEFI ABI. Using `uefi_call_wrapper()` whenever possible.
 {: .prompt-info }
@@ -261,7 +261,7 @@ EFI_STATUS uefi_read_file(EFI_FILE_HANDLE file_handle,
 }
 ```
 
-##### 2.3.1. Load binary kernel
+#### 2.3.1. Load binary kernel
 
 To load a kernel in binary format, we simply allocate the memory for kernel, and jump to the binary start as a kernel entry point:
 
@@ -279,7 +279,7 @@ EFI_STATUS load_binary_kernel(UINT8 *buffer,
 }
 ```
 
-##### 2.3.2. Load ELF kernel
+#### 2.3.2. Load ELF kernel
 
 An ELF kernel start with an ELF header, we parse the ELF structure to get the executable information and then load it into memory. Below here is the ELF header in C format:
 
@@ -438,7 +438,7 @@ EFI_STATUS load_elf_kernel(UINT8 *buffer,
 }
 ```
 
-##### 2.3.3. Build custom kernel
+#### 2.3.3. Build custom kernel
 
 In this blog, we focus on developing the OS loader, so for the kernel will be minimal. The kernel parameters keep basic information and services: memory map and UEFI runtime services ans graphic output protocol:
 
@@ -503,7 +503,7 @@ void main(boot_params_t *params)
 }
 ```
 
-##### 2.3.4. Setup environment and load the kernel
+#### 2.3.4. Setup environment and load the kernel
 
 The main OS loader do 3 main tasks:
 
@@ -752,20 +752,7 @@ uefi_get_custom_protocol()
 }
 ```
 
-#### 2.4. Creating an EFI executable
-
-```bash
-# Compile the application.
-gcc -Ignu-efi/inc -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-red-zone -maccumulate-outgoing-args -c main.c -o main.o
-
-# Link with UEFI libraries.
-ld -shared -Bsymbolic -Lgnu-efi/x86_64/lib -Lgnu-efi/x86_64/gnuefi -Tgnu-efi/gnuefi/elf_x86_64_efi.lds gnu-efi/x86_64/gnuefi/crt0-efi-x86_64.o main.o -o main.so -lgnuefi -lefi
-
-# Converting Shared Object to EFI executable.
-objcopy -j .text -j .sdata -j .data -j .rodata -j .dynamic -j .dynsym  -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc --target efi-app-x86_64 --subsystem=10 main.so main.efi
-```
-
-### 2.2. Create disk images
+### 2.4. Create a bootable disk image
 
 To launch a our UEFI application, we need to create a disk image and present it to QEMU.
 In reality, a disk image usually include an EFI system partition (contains bootloader, kernel, etc) and another partitions (for rootfs, data, etc. And kernel will take care of handling and mounting those partitions). In our system, the bootloader will only load a dummy kernel and do not thing, so we just need to create a simple disk image with EFI partition only.
@@ -773,79 +760,89 @@ In reality, a disk image usually include an EFI system partition (contains bootl
 Create a raw image and an EFI partition on it.
 
 ```bash
-# Create a raw image.
-$ dd if=/dev/zero of=uefi.img bs=512 count=93750
+# 1. Create raw image.
+dd if=/dev/zero of=uefi.img bs=512 count=93750
 
-# Create a EFI partition on the image.
-$ gdisk uefi.img
+# 2. Create UEFI partition on the image.
+gdisk uefi.img <<EOF
+o
+Y
+n
 
-GPT fdisk (gdisk) version 1.0.5
 
-Partition table scan:
-  MBR: not present
-  BSD: not present
-  APM: not present
-  GPT: not present
 
-Creating new GPT entries in memory.
+ef00
+w
+Y
+EOF
 
-Command (? for help): o
-This option deletes all partitions and creates a new protective MBR.
-Proceed? (Y/N): Y
-
-Command (? for help): n
-Partition number (1-128, default 1): 
-First sector (34-93716, default = 2048) or {+-}size{KMGTP}: 
-Last sector (2048-93716, default = 93716) or {+-}size{KMGTP}: 
-Current type is 8300 (Linux filesystem)
-Hex code or GUID (L to show codes, Enter = 8300): ef00
-Changed type of partition to 'EFI system partition'
-
-Command (? for help): w
-
-Final checks complete. About to write GPT data. THIS WILL OVERWRITE EXISTING
-PARTITIONS!!
-
-Do you want to proceed? (Y/N): Y
-OK; writing new GUID partition table (GPT) to uefi.img.
-Warning: The kernel is still using the old partition table.
-The new table will be used at the next reboot or after you
-run partprobe(8) or kpartx(8)
-The operation has completed successfully.
-```
-
-Attach the image into a loopback device and mount it into our system:
-
-```bash
-# Attach the image to a loopback device.
+# 3. Format into the FAT32 file system. 
 sudo losetup --offset 1048576 --sizelimit 46934528 /dev/loop99 uefi.img
-
-# Format into FAT32 file system format.
 sudo mkdosfs -F 32 /dev/loop99
-
-# Mount the loopback device into `/mnt` directory.
-sudo mount /dev/loop99 /mnt
-```
-
-Now we can read-write to the image via the mount point, we'll copy our UEFI applications and kernel dummy image in a directly way. If you want UEFI firmware execute your application automatically (as an OS bootloader) you can rename it to `EFI\BOOT\BOOTX64.EFI`.
-
-```bash
-sudo mkdir -p /mnt/EFI/BOOT/
-sudo cp main.efi /mnt/EFI/BOOT/BOOTX64.EFI
-sudo cp kernel.bin /mnt/EFI
-
-# Optional, if you custom your startup script.
-sudo cp startup.nsh /mnt/EFI/STARTUP.NSH
-```
-
-Unmount and detach the loopback device:
-
-```bash
-sudo umount /mnt
 sudo losetup -d /dev/loop99
 ```
 
-### 2.3. Emulate
+### 2.5. Make all system
+
+```make
+CC=gcc
+LD=ld
+INC=-Ignu-efi/inc -I. -Iloaders
+CFLAGS=-fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-red-zone -maccumulate-outgoing-args
+LDFLAGS=-shared -Bsymbolic
+LDLIB_DIRS=-Lgnu-efi/x86_64/lib -Lgnu-efi/x86_64/gnuefi
+LDLIBS=-lgnuefi -lefi
+LD_LINKER_FILE=gnu-efi/gnuefi/elf_x86_64_efi.lds
+LD_STARTUP_FILE=gnu-efi/x86_64/gnuefi/crt0-efi-x86_64.o
+OBJCOPY_FLAGS=-j .text -j .sdata -j .data -j .rodata -j .dynamic -j .dynsym  -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc --target efi-app-x86_64 --subsystem=10
+BOOTLOADER_IMG=main.efi
+KERNEL_IMG=kernel.elf
+OBJS= main.o file.o loaders/elf.o loaders/binary.o loaders/loader.o
+OS_IMAGE=uefi.img
+
+lib:
+	sudo make -C gnu-efi install
+
+app:$(BOOTLOADER_IMG)
+	echo "Built BOOTLOADER_OBJ"
+
+kernel.bin:
+	gcc -ffreestanding $(INC) -c kernel.c -o kernel.o -fPIE
+	ld -o kernel.bin kernel.o -nostdlib --oformat=binary -e main
+
+kernel.elf:
+	gcc -ffreestanding $(INC) kernel.c -o kernel.elf -nostdlib -e main
+
+image: $(OS_IMAGE) $(BOOTLOADER_IMG) $(KERNEL_IMG)
+	sudo losetup --offset 1048576 --sizelimit 46934528 /dev/loop99 uefi.img
+	sudo mount /dev/loop99 /mnt
+	sudo mkdir -p /mnt/EFI/BOOT/
+	sudo cp $(BOOTLOADER_IMG) /mnt/EFI/BOOT/BOOTX64.EFI
+	sudo cp $(KERNEL_IMG) /mnt/
+	sudo umount /mnt
+	sudo losetup -d /dev/loop99
+
+all: lib image $(KERNEL_IMG)
+
+clean:
+	rm -rf *.o *.so *img *.efi *.elf *.bin loaders/*.o
+
+%.o: %.c
+	$(CC) $(CFLAGS) $(INC) -c $< -o $@
+
+%.so: $(OBJS)
+	$(LD) $(LDFLAGS) $(LDLIB_DIRS) -T$(LD_LINKER_FILE) $(LD_STARTUP_FILE) $(OBJS) -o $@ $(LDLIBS)
+
+%.efi: %.so
+	objcopy $(OBJCOPY_FLAGS) $< $@
+
+%.img:
+	sudo ./create-img.sh
+```
+
+`make image` to build all system.
+
+### 2.6. Emulate
 
 If you choose VirtualBox for virtualization, UEFI is already included, no need to download the image manually. Just enable it.
 
@@ -854,11 +851,14 @@ otherwise for emulation and virtual machines, we need an **OVMF.fd** firmware im
 ```bash
 # Install the firmware.
 apt-get install ovmf
-
-# Boot system with the firmware like BIOS firmware.
-qemu-system-x86_64 -cpu qemu64 -bios /usr/share/qemu/OVMF.fd
 ```
+
+Start system with qemu:
 
 ```bash
-qemu-system-x86_64 -cpu qemu64 -bios /usr/share/qemu/OVMF.fd -drive file=uefi.img,if=ide
+sudo qemu-system-x86_64 -cpu qemu64 -bios /usr/share/qemu/OVMF.fd -drive format=raw,unit=0,file=uefi.img -m 256M -vga std -net none
 ```
+
+### 3.References
+
+Full source code [github](https://github.com/EmbeddedOS/uefi-bootloader)
