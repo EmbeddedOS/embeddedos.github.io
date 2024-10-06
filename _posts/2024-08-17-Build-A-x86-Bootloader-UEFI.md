@@ -859,6 +859,14 @@ Start system with qemu:
 sudo qemu-system-x86_64 -cpu qemu64 -bios /usr/share/qemu/OVMF.fd -drive format=raw,unit=0,file=uefi.img -m 256M -vga std -net none
 ```
 
+System load the kernel and print ELF information:
+
+![Kernel Information](assets/img/UEFI_print_kernel_info.png)
+
+Kernel is loaded and replace screen with the red color:
+
+![Kernel Running](assets/img/UEFI_pass_control_to_kernel.png)
+
 ### 3.References
 
-Full source code [github](https://github.com/EmbeddedOS/uefi-bootloader)
+Full source code on [github](https://github.com/EmbeddedOS/uefi-bootloader)
