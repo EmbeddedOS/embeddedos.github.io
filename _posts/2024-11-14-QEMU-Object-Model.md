@@ -4,7 +4,7 @@ description: >-
   Let's discover how QEMU modularize its source code structure into a framework with Object Model.
   
 author: Cong
-date: 2024-11-14 7:00:00 +0800
+date: 2024-11-14 00:00:00 +0800
 categories: [QEMU, QOM]
 tags: [QEMU, QOM, OOP]
 image:
