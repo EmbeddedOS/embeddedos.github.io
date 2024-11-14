@@ -8,7 +8,7 @@ date: 2024-11-14 00:00:00 +0800
 categories: [QEMU, QOM]
 tags: [QEMU, QOM, OOP]
 image:
-  path: assets/img/qemu_logo.png
+  path: assets/img/qemu_logo.jpg
   alt: QEMU.
 ---
 
