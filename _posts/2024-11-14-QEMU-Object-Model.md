@@ -1,5 +1,5 @@
 ---
-title: 'QEMU Object Module: QEMU framework with OOP style.'
+title: 'QEMU Object Module: a QEMU's framework with OOP style.'
 description: >-
   Let's discover the QEMU Object Module and how it provides a framework for registering user creatable types using an OOP approach.
   
@@ -20,7 +20,7 @@ QEMU Object Model (QOM) is a framework that QEMU provides to register user creat
 
 ## 2. The QOM Class
 
-To create a new QOM class, QEMU provided APIs and a struct `TypeInfo` to describe your class.
+To create a new QOM class, QEMU provided APIs and a `TypeInfo` struct to describe your class. The `TypeInfo` describe information about the type including what its parent, constructor and destructor hooks.
 
 ```c
 struct TypeInfo
@@ -44,5 +44,14 @@ struct TypeInfo
     InterfaceInfo *interfaces;
 };
 ```
+
+Some of important fields:
+
+- `name` The type name.
+- `parent` The parent type name.
+- `instance_init` Object constructor, initialize its own members.
+- `instance_finalize` Object destructor, destroy and free its own members.
+- `class_init` Class initializer. That is called after parent types were initialized, this can be used to override parents's virtual method.
+- `class_data` The hook data that is passed to the `class_init`.
 
 ## 3. The QOM Object
