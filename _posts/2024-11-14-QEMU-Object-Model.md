@@ -1,5 +1,5 @@
 ---
-title: 'QEMU Object Module: a QEMU's Framework with OOP style'
+title: "QEMU Object Module: a QEMU's Framework with OOP style"
 description: >-
   Let's discover the QEMU Object Module and how it provides a framework for registering user creatable types using an OOP approach.
   
