@@ -64,13 +64,90 @@ Type type_register_static(const TypeInfo *info);
 void type_register_static_array(const TypeInfo *infos, int nr_infos);
 ```
 
-## 2.2. Class Instance
+The root object class is `TYPE_OBJECT` which provides basic methods. Every type have to inherit from another class, at least from the root object class. That QOM become a composition tree.
+
+Here is an example of how to define a new device type in QEMU, the object inherit from the type `TYPE_DEVICE`:
+
+```c
+#define TYPE_MY_DEVICE "my-device"
+
+typedef DeviceClass MyDeviceClass;
+typedef struct
+{
+    DeviceState parent_class;
+
+    int reg0, reg1, reg2;
+} MyDevice;
+
+static const TypeInfo my_device_info = {
+    .name = TYPE_MY_DEVICE,
+    .parent = TYPE_DEVICE,
+    .instance_size = sizeof(MyDevice),
+};
+
+static void my_device_register_types(void)
+{
+    type_register_static(&my_device_info);
+}
+
+type_init(my_device_register_types)
+```
+
+### QOM tree
+
+The root object class is `TYPE_OBJECT`, and then basic component types and finally end up with machine types.
+
+```text
+TYPE_OBJECT
+├──TYPE_EVENT_LOOP_BASE
+│   ├──TYPE_MAIN_LOOP
+│   └──TYPE_IOTHREAD
+├──TYPE_DEVICE
+│   ├──TYPE_TYPE_AW_A10
+│   ├──TYPE_FLOPPY_DRIVE
+│   ├──TYPE_SERIAL
+│   ├──TYPE_CPU
+│   │   ├──TYPE_ALPHA_CPU
+│   │   ├──TYPE_ARM_CPU
+│   │   │   ├──TYPE_AARCH64_CPU
+│   │   │   ├──TYPE_ARM_CPU '-cortex-a7'
+│   │   │   ├──TYPE_ARM_CPU '-cortex-m4'
+│   │   │   ├──TYPE_ARM_CPU '-cortex-r5'
+│   │   │   └──...
+│   │   ├──TYPE_X86_CPU
+│   │   ├──TYPE_RISCV_CPU
+│   │   └──...
+│   ├──TYPE_REGISTER
+│   ├──TYPE_I2C_SLAVE
+│   │   ├──TYPE_SMBUS_DEVICE
+│   │   ├──TYPE_AT24C_EE
+│   │   └──...
+│   ├──
+│   └──...
+├──TYPE_
+│   ├──TYPE_
+│   └──TYPE_
+├──TYPE_
+│   ├──TYPE_
+│   └──TYPE_
+├──TYPE_
+│   ├──TYPE_
+│   └──TYPE_
+├──TYPE_
+│   ├──TYPE_
+│   └──TYPE_
+├──TYPE_
+│   ├──TYPE_
+│   └──TYPE_
+```
+
+### 2.3. Class Instance
 
 Every type has an `ObjectClass` associate with it. The struct that hold shared information between object instances. For example, an `ObjectClass` can hold virtual table, methods, cast-caching that are generic for all object instances of the type.
 
 In C++, or higher level OOP languages, we don't see the class instance concepts, because the compiler make it automatically, under the hood. But in C, QEMU have to do it manually.
 
-### 2.2.1. Class initialization
+#### 2.3.1. Class initialization
 
 Before any objects are initialized, the class for the object must be initialized. There is only one class object for all instance objects.
 
@@ -99,7 +176,28 @@ static const TypeInfo my_device_info = {
 
 ## 3. The QOM Object
 
-## 4. `type_init()` macro
+### 3.1. Create a new object
+
+To create new object instance we can use `object_new()` API:
+
+```c
+Object *object_new(const char *typename);
+```
+
+The API returns an object base that we can cast to our type.
+
+### 3.2. Casting object
+
+We can cast (OBJECT *)
+`DECLARE_INSTANCE_CHECKER(_pci_device_object, C_PCI_DEV, TYPE_PCI_CUSTOM_DEVICE);`
+
+### 3.3. Properties
+
+### 3.4. Methods
+
+### 3.5. Destroy an object
+
+## 4. Load the module with `type_init()` macro
 
 Similar like Linux Kernel Module, you need a way to tell where to start your module. The QEMU provide the `type_init()` macro, that automatically call you function when module is loaded. Behind the scene, we have GCC extension attribute `__attribute__((constructor))`, that make your function is called automatically before `main()`
 
