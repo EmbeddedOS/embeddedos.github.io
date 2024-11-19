@@ -122,23 +122,48 @@ TYPE_OBJECT
 │   │   ├──TYPE_SMBUS_DEVICE
 │   │   ├──TYPE_AT24C_EE
 │   │   └──...
-│   ├──
+│   ├──TYPE_USB_DEVICE
+│   │   ├──TYPE_USB_HID
+│   │   ├──TYPE_USB_STORAGE
+│   │   └──...
+│   ├──TYPE_VIRTIO_DEVICE
+│   │   ├──TYPE_VIRTIO_NET
+│   │   ├──TYPE_VIRTIO_SERIAL
+│   │   ├──TYPE_VIRTIO_IOMMU
+│   │   ├──TYPE_VIRTIO_MEM
+│   │   └──...
+│   ├──TYPE_SYS_BUS_DEVICE
+│   │   ├──TYPE_ARMV7M
+│   │   ├──TYPE_OMAP_I2C
+│   │   ├──TYPE_STM32F405_SOC
+│   │   └──...
 │   └──...
-├──TYPE_
-│   ├──TYPE_
-│   └──TYPE_
-├──TYPE_
-│   ├──TYPE_
-│   └──TYPE_
-├──TYPE_
-│   ├──TYPE_
-│   └──TYPE_
-├──TYPE_
-│   ├──TYPE_
-│   └──TYPE_
-├──TYPE_
-│   ├──TYPE_
-│   └──TYPE_
+├──TYPE_MEMORY_BACKEND
+│   ├──TYPE_MEMORY_BACKEND_FILE
+│   ├──TYPE_MEMORY_BACKEND_RAM
+│   └──...
+├──TYPE_CHARDEV
+│   ├──TYPE_CHARDEV_SOCKET
+│   │   └──TYPE_CHARDEV_DBUS
+│   ├──TYPE_CHARDEV_FD
+│   ├──TYPE_CHARDEV_FILE
+│   ├──TYPE_CHARDEV_NULL
+│   ├──TYPE_CHARDEV_PIPE
+│   ├──TYPE_CHARDEV_SERIAL
+│   ├──TYPE_CHARDEV_CONSOLE
+│   └──...
+├──TYPE_BUS
+│   ├──TYPE_I2C_BUS
+│   ├──TYPE_SYSTEM_BUS
+│   └──TYPE_FLOPPY_BUS
+├──TYPE_IRQ
+├──TYPE_MACHINE
+│   ├──TYPE_X86_MACHINE
+│   ├──TYPE_ARDUINO_MACHINE
+│   ├──TYPE_VIRT_MACHINE
+│   └──...
+├──TYPE_MEMORY_REGION
+└──...
 ```
 
 ### 2.3. Class Instance
