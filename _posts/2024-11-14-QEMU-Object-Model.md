@@ -16,8 +16,6 @@ image:
 
 QEMU Object Model (QOM) is a framework that QEMU provides to register user creatable type.
 
-## 3. The QOM Tree
-
 ## 2. The QOM Class
 
 ### 2.1. `TypeInfo` struct
@@ -66,7 +64,42 @@ Type type_register_static(const TypeInfo *info);
 void type_register_static_array(const TypeInfo *infos, int nr_infos);
 ```
 
-### 2.2. `type_init()` macro
+## 2.2. Class Instance
+
+Every type has an `ObjectClass` associate with it. The struct that hold shared information between object instances. For example, an `ObjectClass` can hold virtual table, methods, cast-caching that are generic for all object instances of the type.
+
+In C++, or higher level OOP languages, we don't see the class instance concepts, because the compiler make it automatically, under the hood. But in C, QEMU have to do it manually.
+
+### 2.2.1. Class initialization
+
+Before any objects are initialized, the class for the object must be initialized. There is only one class object for all instance objects.
+
+After all of the parent classes have been initialized, the `TypeInfo::class_init` callback is called.
+
+For example, in this case, we define our type `OUR_TYPE_DEVICE` that inherit from `TYPE_DEVICE` class. We define `TypeInfo::class_init` callback to override the default `reset()` and `realize()` methods of `TYPE_DEVICE`.
+
+```c
+void our_device_class_init(ObjectClass *klass, void *class_data)
+{
+    /* 1. Get parent class object. */
+    DeviceClass *dc = DEVICE_CLASS(klass);
+
+    /* 2. Override reset() and realize() methods. */
+    dc->reset = our_device_reset;
+    dc->realize = our_device_realize;
+}
+
+static const TypeInfo my_device_info = {
+    .name = OUR_TYPE_DEVICE,
+    .parent = TYPE_DEVICE,
+    .instance_size = sizeof(OurDevice),
+    .class_init = our_device_class_init,
+};
+```
+
+## 3. The QOM Object
+
+## 4. `type_init()` macro
 
 Similar like Linux Kernel Module, you need a way to tell where to start your module. The QEMU provide the `type_init()` macro, that automatically call you function when module is loaded. Behind the scene, we have GCC extension attribute `__attribute__((constructor))`, that make your function is called automatically before `main()`
 
@@ -97,5 +130,3 @@ void register_module_init(void (*fn)(void), module_init_type type)
     QTAILQ_INSERT_TAIL(l, e, node);
 }
 ```
-
-## 3. The QOM Object
