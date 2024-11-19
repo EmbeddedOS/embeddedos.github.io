@@ -207,14 +207,59 @@ To create new object instance we can use `object_new()` API:
 
 ```c
 Object *object_new(const char *typename);
+
+Object *object_new_with_class(ObjectClass *klass);
 ```
 
 The API returns an object base that we can cast to our type.
 
-### 3.2. Casting object
+### 3.2. Inheritance casting
 
-We can cast (OBJECT *)
-`DECLARE_INSTANCE_CHECKER(_pci_device_object, C_PCI_DEV, TYPE_PCI_CUSTOM_DEVICE);`
+QOM use `Object` struct as base for all class. The first member of any types always are their parents. For example, our type inherit from `TYPE_DEVICE`, we have to put struct `DeviceState` as a first member.
+
+```c
+typedef DeviceClass MyDeviceClass;
+typedef struct
+{
+    DeviceState parent_class;
+
+    int reg0, reg1, reg2;
+} MyDevice;
+
+static const TypeInfo my_device_info = {
+    .name = TYPE_MY_DEVICE,
+    .parent = TYPE_DEVICE,
+    .instance_size = sizeof(MyDevice),
+};
+```
+
+The `DeviceState` that represents `TYPE_DEVICE` type, do the the same way. It inherits `TYPE_OBJECT` and have to define `Object parent_obj;` as a first member.
+
+```c
+struct DeviceState {
+    /* private: */
+    Object parent_obj;
+    /* public: */
+
+    /**
+     * @id: global device id
+     */
+    char *id;
+    /**
+     * @canonical_path: canonical path of realized device in the QOM tree
+     */
+    char *canonical_path;
+    /**
+     * @realized: has device been realized?
+     */
+    bool realized;
+
+    // ...
+};
+
+```
+
+The reason why we have to put the parent object as a first member, since C guarantees that the first member of a structure always begins at byte 0 of that structure, as long as any sub-object places its parent as the first member, we can cast directly to a `Object`.
 
 ### 3.3. Properties
 
