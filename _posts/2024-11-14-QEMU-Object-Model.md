@@ -45,7 +45,7 @@ struct TypeInfo
 };
 ```
 
-Some of important fields:
+Some of important members:
 
 - `name` The type name.
 - `parent` The parent type name.
@@ -259,9 +259,48 @@ struct DeviceState {
 
 ```
 
-The reason why we have to put the parent object as a first member, since C guarantees that the first member of a structure always begins at byte 0 of that structure, as long as any sub-object places its parent as the first member, we can cast directly to a `Object`.
+The reason why we have to put the parent object as a first member, since C guarantees that the first member of a structure always begins at byte 0 of that structure, as long as any sub-object places its parent as the first member, we can cast directly to a `Object` as well as to parent and sub types.
 
 ### 3.3. Properties
+
+In QOM, we have two type of class member: C struct member of your type and Property member. The different is that, you can use Property as a external interface. We don't need to expose internal implement like directly access to struct member, Accessor accesses the properties via setter, getter APIs.
+
+A property is represented by struct `ObjectProperty`.
+
+```c
+struct ObjectProperty
+{
+    char *name;
+    char *type;
+    char *description;
+    ObjectPropertyAccessor *get;
+    ObjectPropertyAccessor *set;
+    ObjectPropertyResolve *resolve;
+    ObjectPropertyRelease *release;
+    ObjectPropertyInit *init;
+    void *opaque;
+    QObject *defval;
+};
+```
+
+Some of important members:
+
+- `name` The property name.
+- `type` property type. Can be fundamental types (int, uint32, string, etc), user structure, or specified command line types (`on|off|split`).
+- `get` Getter.
+- `set` Setter.
+- `init` property's initializer.
+- `release` property's destructor.
+
+Both `Object` and `ObjectClass` hold a GHashTable `properties` fields. The `ObjectClass` hold common class's properties whereas the `Object` hold specified object's properties.
+
+#### 3.3.1. Add a property to an object
+
+Get the property's value.
+
+Set the property's value.
+
+Remove the property from the object.
 
 ### 3.4. Methods
 
