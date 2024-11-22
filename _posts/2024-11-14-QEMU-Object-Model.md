@@ -296,11 +296,102 @@ Both `Object` and `ObjectClass` hold a GHashTable `properties` fields. The `Obje
 
 #### 3.3.1. Add a property to an object
 
-Get the property's value.
+To add a property to a object, QEMU provide some APIs and some helper functions to add specific types. The basic API `object_property_add()`
 
-Set the property's value.
+```c
+ObjectProperty *object_property_add(Object *obj, const char *name,
+                                    const char *type,
+                                    ObjectPropertyAccessor *get,
+                                    ObjectPropertyAccessor *set,
+                                    ObjectPropertyRelease *release,
+                                    void *opaque);
 
-Remove the property from the object.
+```
+
+The `opaque` is an opaque pointer to pass to the callbacks. An error like property already exist might abort the program. That is the reason QEMU provide other `object_property_try_add()` that can return an error code instead.
+
+QEMU also provide some helpers to add well-known types, for example `string` and `bool`:
+
+```C
+ObjectProperty *object_property_add_str(Object *obj, const char *name,
+                             char *(*get)(Object *, Error **),
+                             void (*set)(Object *, const char *, Error **));
+
+ObjectProperty *object_property_add_bool(Object *obj, const char *name,
+                              bool (*get)(Object *, Error **),
+                              void (*set)(Object *, bool, Error **));
+```
+
+#### 3.3.2. Get the property's value
+
+To get a property's value we use the API `object_property_get()` and provide a Visitor that hold the callback to get value.
+
+The getter callback also will be called in case of getting success.
+
+```c
+bool object_property_get(Object *obj, const char *name, Visitor *v,
+                         Error **errp);
+```
+
+`Visitor` struct is a generic interface to access the properties with any types. It holds function pointer for every types:
+
+```c
+struct Visitor
+{
+    /* Must be set */
+    bool (*type_bool)(Visitor *v, const char *name, bool *obj, Error **errp);
+
+    /* Must be set */
+    bool (*type_str)(Visitor *v, const char *name, char **obj, Error **errp);
+
+    /* Must be set to visit numbers */
+    bool (*type_number)(Visitor *v, const char *name, double *obj,
+                        Error **errp);
+
+    /* Must be set to visit arbitrary QTypes */
+    bool (*type_any)(Visitor *v, const char *name, QObject **obj,
+                     Error **errp);
+
+    /* Must be set to visit explicit null values.  */
+    bool (*type_null)(Visitor *v, const char *name, QNull **obj,
+                      Error **errp);
+    // ...
+}
+```
+
+QEMU also provides helper function to get specific types easier for example: `object_property_get_str()`, `object_property_get_bool()`.
+
+#### 3.3.3. Set the property's value
+
+Similar like get API, we have basic set API:
+
+```c
+bool object_property_set(Object *obj, const char *name, Visitor *v,
+                         Error **errp);
+```
+
+QEMU also provides helper function to set specific types easier for example: `object_property_set_str()`, `object_property_set_bool()`.
+
+#### 3.3.4. Remove the property from the object
+
+```C
+void object_property_del(Object *obj, const char *name);
+```
+
+#### 3.3.5. Add, remove properties to the object class
+
+Some properties that you want to share for every objects of a class, you can add them directly to the `ObjectClass` struct, QEMU provides same APIs like adding and removing properties object, but for class object. For example:
+
+```c
+ObjectProperty *object_class_property_add(ObjectClass *klass, const char *name,
+                                          const char *type,
+                                          ObjectPropertyAccessor *get,
+                                          ObjectPropertyAccessor *set,
+                                          ObjectPropertyRelease *release,
+                                          void *opaque);
+```
+
+There is no APIs for getting, setting properties on class object, because getting and setting is each object's behaviors.
 
 ### 3.4. Methods
 
