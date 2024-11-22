@@ -395,7 +395,76 @@ There is no APIs for getting, setting properties on class object, because gettin
 
 ### 3.4. Methods
 
+A method a function pointer that is hold as a struct member. The different thing in QOM is that, you can override the default parent method by assign another function pointer when the `ClassObject` init() running. For example:
+
+```c
+typedef struct MyState MyState;
+
+typedef void (*MyDoSomething)(MyState *obj);
+
+typedef struct MyClass {
+    ObjectClass parent_class;
+
+    MyDoSomething do_something;
+} MyClass;
+
+static void my_do_something(MyState *obj)
+{
+    // do something
+}
+
+static void my_class_init(ObjectClass *oc, void *data)
+{
+    MyClass *mc = MY_CLASS(oc);
+
+    mc->do_something = my_do_something;
+}
+
+static const TypeInfo my_type_info = {
+    .name = TYPE_MY,
+    .parent = TYPE_OBJECT,
+    .instance_size = sizeof(MyState),
+    .class_size = sizeof(MyClass),
+    .class_init = my_class_init,
+};
+
+typedef struct DerivedClass {
+    MyClass parent_class;
+} DerivedClass;
+
+static void derived_do_something(MyState *obj)
+{
+    DerivedClass *dc = DERIVED_GET_CLASS(obj);
+    // do something here
+}
+
+static void derived_class_init(ObjectClass *oc, void *data)
+{
+    MyClass *mc = MY_CLASS(oc);
+    mc->do_something = derived_do_something;
+}
+
+static const TypeInfo derived_type_info = {
+    .name = TYPE_DERIVED,
+    .parent = TYPE_MY,
+    .class_size = sizeof(DerivedClass),
+    .class_init = derived_class_init,
+};
+```
+
+In the above example, we define class `DerivedClass` inherit `MyClass`, in the `derived_class_init()` we override method `do_something()` by our `derived_do_something()`. That means from now, with every objects of the type, every call to `do_something()` method will always call the `derived_do_something()` instead.
+
 ### 3.5. Destroy an object
+
+Object reference count is that way QEMU manege object deletion. When you create a new one, the default count is 1. The API `object_ref()` make a reference to object and increase the count by 1, the API `object_unref()` delete the reference and decrease the count by 1. When the count become zero, the object will be destroyed and the destructor will be call.
+
+You shouldn't hold the object pointer copy by hand, the better thing is hold the reference instead.
+
+### 3.6. Device Life-cycle
+
+In QEMU everything is a object even devices. On the `realize()` successful completion, the object is added to QOM tree and make visible to the guest.
+
+The reverse `unrealize()` should be defined to undo device initialization in `realize()`.
 
 ## 4. Load the module with `type_init()` macro
 
