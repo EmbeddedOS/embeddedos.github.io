@@ -14,7 +14,7 @@ image:
 
 ## 1. QEMU Object Model
 
-QEMU Object Model (QOM) is a framework that QEMU provides to register user creatable type.
+QEMU Object Model (QOM) is a framework that QEMU provides to register user creatable type. With OOP approach, components in QOM surround by object's concepts: class, object, method, property, constructor, destructor and so on. Let's discover the QOM.
 
 ## 2. The QOM Class
 
