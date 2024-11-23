@@ -312,7 +312,7 @@ The `opaque` is an opaque pointer to pass to the callbacks. An error like proper
 
 QEMU also provide some helpers to add well-known types, for example `string` and `bool`:
 
-```C
+```c
 ObjectProperty *object_property_add_str(Object *obj, const char *name,
                              char *(*get)(Object *, Error **),
                              void (*set)(Object *, const char *, Error **));
@@ -374,7 +374,7 @@ QEMU also provides helper function to set specific types easier for example: `ob
 
 #### 3.3.4. Remove the property from the object
 
-```C
+```c
 void object_property_del(Object *obj, const char *name);
 ```
 
