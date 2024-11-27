@@ -34,7 +34,16 @@ The target machine to be added:
 2. QEMU start running:
    - Loading all modules in the QoM tree.
    - Running the `type_init()` callbacks.
-   - Initialize all types by calling `class_init` callbacks, that also included our machine type `stm32f407g_disc_class_init()` and soc type `stm32f407_soc_class_init()`:
+   - Initialize all types by calling `class_init` callbacks, that also included our machine type `stm32f407g_disc_class_init()` and soc type `stm32f407_soc_class_init()`.
    - Look up to our machine type `stm32f407g_disc` in the tree and create an object for the type, so the constructor for our machine type will be called `stm32f407g_disc_init()`.
    - In the our machine constructor, we start initializing the machine.
-     - Create an `stm32f407_soc` object.
+   - Create a source clock with frequency.
+   - Create an `stm32f407_soc` device object. The corresponding `stm32f407_soc` will be called. In the constructor we do:
+     - Add and initialize object's runtime properties: CPU, Peripherals (uart, spi, timer, etc.), Interrupt, system clock, reference clock.
+   - Connect our device with the clock.
+   - Plug our device to the default sysbus and realize the device. In this time the realize callback will be called.
+     - Initialize memories: flash, ram, sram.
+     - Realize object properties: CPU, peripherals.
+     - Mapping peripherals to memory.
+     - Connect peripheral interrupt line.
+   - Load the kernel.
