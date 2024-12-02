@@ -18,9 +18,11 @@ The target machine to be added:
 
 - STM32F407 Discover 1 board.
 - STM32F407 SoC based Cortex-M4 core.
-- RAM:
-- Peripherals:
-- Flash:
+- RAM: SRAM 128 KB + 64 KB CCM.
+- Clock: 4-to-26 MHz crystal oscillator + Internal 16 MHz factory-trimmed RC +  32 kHz oscillator for RTC +  Internal 32 kHz RC.
+- Peripherals: 2xADC, 2xDAC, 17 timers,
+- General purpose 16-bit DMA.
+- Flash: 1MB of flash.
 - Interrupt controller:
 
 ## 2. Understand the loading flow
