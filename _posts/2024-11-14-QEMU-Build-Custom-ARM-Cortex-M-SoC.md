@@ -14,10 +14,29 @@ image:
 
 ## 1. Target machine
 
-The target machine to be added:
+### 1.1. Overview about the SoC
 
-- STM32F407 Discover 1 board.
-- STM32F407 SoC based Cortex-M4 core.
+The target emulated machine will be STM32F407 Discovery 1 board that based on STM32F407 SoC and Cortex-M4 core. Let's take a look to some basic concepts:
+
+- Memory map:
+- Bus protocol and bus interface:
+
+```text
+ __________________       ________
+|Cortex-M4    I-bus|<--->| AHB Bus|<-----> Flash.
+| 168-MHz     D-bus|<--->| Matrix |<-----> SRAM.
+|             S-bus|<--->|________|<-----> DMA1, DMA2.
+                                 \<-----AHB3---> External memory (SRAM, NOR Flash, NAND Flash).
+|__________________|              \<----AHB2---> Camera FIFO, USB OTG FS, RNG.
+                                   \<---AHB1---> GPIOx.
+                                         \<----> AHB/APB1<----> DAC, USART, UART, WDG, CAN, SPI, I2C, etc.
+                                          \<---> AHB/APB2<----> TIM, USART, ADC, SPI, etc.
+```
+
+### 1.2. Target emulator
+
+QEMU have some limitations on some kind of peripheral. For example:
+
 - RAM: SRAM 128 KB + 64 KB CCM.
 - Clock: 4-to-26 MHz crystal oscillator + Internal 16 MHz factory-trimmed RC +  32 kHz oscillator for RTC +  Internal 32 kHz RC.
 - Peripherals: 2xADC, 2xDAC, 17 timers,
