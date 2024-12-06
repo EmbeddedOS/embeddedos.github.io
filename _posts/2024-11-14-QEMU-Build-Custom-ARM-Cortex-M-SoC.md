@@ -66,7 +66,9 @@ The bus interfaces provides 32-bit address and 32-bit data channels, so the proc
 
 512MB of the `CODE` region contains different type of code memories: Flash, ROM, etc. 1MB of Flash memory reside in the region that start from the address `0x08000000`. Processor be default fetches the vector table information from this region right after reset.
 
-The `SRAM` (Static-RAM) region is the next 512MB that contains 128KB + 16KB SRAM started from 0x20000000 and then reserved region. This region can also contain executable code.
+The `SRAM` (Static-RAM) region is the next 512MB that contains 112KB + 16KB SRAM started from `0x20000000` and then reserved region. This region can also contain executable code.
+
+Core Coupled Memory (CCM) is a special SRAM block available in the STM32 F2, F3, and F4 families. CCM can be faster than the standard SRAM, but it is usually smaller. To use, this region need to be define in linker script and configure by user firmware.
 
 The Peripherals region is used for almost on chip peripherals. For example:
 
@@ -103,14 +105,19 @@ Some other clock sources like LSI, LSE (Low Speed) are used for RTC, IWDG.
 
 ### 1.2. Target emulator
 
-QEMU have some limitations on some kind of peripheral. For example:
+#### 1.2.1. Memory
 
-- RAM: SRAM 128 KB + 64 KB CCM.
-- Clock: 4-to-26 MHz crystal oscillator + Internal 16 MHz factory-trimmed RC +  32 kHz oscillator for RTC +  Internal 32 kHz RC.
-- Peripherals: 2xADC, 2xDAC, 17 timers,
-- General purpose 16-bit DMA.
-- Flash: 1MB of flash.
-- Interrupt controller:
+- The SoC support 128KB SRAM start from `0x20000000`.
+- The 1MB Flash start from `0x08000000`.
+- The 64KB of CCM (core coupled memory) data RAM start from `0x10000000`.
+
+#### 1.2.2. Clock
+
+By default after resetting, the HSI is selected as a source clock with value 16MHz.
+
+#### 1.2.3. Peripherals
+
+The STM32F407 SoC have various peripherals, some of them are not supported (or developed) by QEMU yet. Let's start with two basic peripherals: USART and GPIOx. The SoC has 4 USARTs/2 UARTs along with 9 GPIOx.
 
 ## 2. Understand the loading flow
 
