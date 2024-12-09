@@ -1,5 +1,5 @@
 ---
-title: "Write bare metal boot code for SoC based ARM Cortex-M"
+title: "Write bare metal boot code for ARM Cortex-M based SoC"
 description: >-
   Write your own are metal boot code, drivers for STM32F407xx SoC
   
