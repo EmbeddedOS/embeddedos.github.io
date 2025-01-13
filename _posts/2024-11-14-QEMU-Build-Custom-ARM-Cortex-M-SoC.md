@@ -143,3 +143,5 @@ The STM32F407 SoC have various peripherals, some of them are not supported (or d
      - Mapping peripherals to memory.
      - Connect peripheral interrupt line.
    - Load the kernel.
+
+Continue.
