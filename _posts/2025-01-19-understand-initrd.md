@@ -4,7 +4,7 @@ description: >-
   Let's dig deeper into of initrd concept in Linux system and the differences between initrd, ramfs, initramfs, and rootfs.
 
 author: Cong
-date: 2025-19-01 00:00:00 +0700
+date: 2025-19-01 00:00:00 +0800
 categories: [Linux, initrd]
 tags: [initrd]
 ---
@@ -21,6 +21,6 @@ The second thing was mentioned is *temporary root filesystem*. A root filesystem
 
 I have other blog that goes into the rootfs and building a simplest one, take a look here: [building rootfs](/posts/2025-01-19-building_a_rootfs).
 
-Back to the `initrd` concept, let's summarize, this rootfs will be loaded into RAM for temporary and as a part of booting flow. *temporary* means finally we still need to load the real one?. So the questions are why we need to load a temporary rootfs into RAM? why don't we mount the real rootfs and using it directly? Let's go to next section to find out the answers.
+Back to the `initrd` concept, let's summarize, this rootfs will be loaded into RAM for temporary and as a part of booting flow. *temporary* means finally we still need to load the real one?. So the questions are why we need to load a temporary rootfs into RAM? why don't we mount the real rootfs and using it directly? Let's go to the next section to find out the answers.
 
 ## 2. Why we need `initrd`?
