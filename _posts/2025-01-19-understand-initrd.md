@@ -4,7 +4,7 @@ description: >-
   Let's dig deeper into of initrd concept in Linux system and the differences between initrd, ramfs, initramfs, and rootfs.
 
 author: Cong
-date: 2025-19-01 00:00:00 +0800
+date: 2025-01-19 00:00:00 +0800
 categories: [Linux, initrd]
 tags: [initrd]
 ---
