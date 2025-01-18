@@ -1,5 +1,5 @@
 ---
-title: "Understand what initrd is, and why it's necessary in Linux system."
+title: "Understand initrd, build a minimum initrd image for Linux system."
 description: >-
   Let's dig deeper into of initrd concept in Linux system and the differences between initrd, ramfs, initramfs, and rootfs.
 
@@ -11,7 +11,7 @@ tags: [initrd]
 
 ## 1. What is initrd?
 
-First time heard of that, I have to admit that I thought `initrd` was some programs to initialize ram and disk drives 😛. So let's analysis this concept to avoid silly mistakes like me.
+First time heard of that, I have to admit that I have thought `initrd` was some programs that are used to initialize ram and disk drives 😛. So let's analysis this concept to avoid silly mistakes like me.
 
 The wikipedia mentions `initrd` concept: in Linux systems, `initrd` (initial ramdisk) is a scheme for loading temporary root filesystem into memory, to be used as part of Linux startup process. Let's delve into this concept.
 
@@ -25,19 +25,19 @@ Back to the `initrd` concept, let's summarize, this rootfs will be loaded into R
 
 ## 2. Why we need initrd?
 
-The key reasons why the initrd is needed in Linux system:
+To answer this question, let's discuss these scenarios, where another component outside the kernel is needed:
 
-1. For many Linux distributions, *kernel image is generic* that need to boot on a wide variety of hardware. The Device Drivers for this generic kernel are included as loadable kernel modules (runtime kernel modules) because so many static drivers can cause larger kernel image, or might lead to other problems like conflicting hardware. The static-compiled kernel module approach also leaves modules in kernel memory which are no longer used or needed. by storing these runtime modules in `initrd`, we separate them from kernel, kernel then can load them to access the rootfs.
+1. For many Linux distributions, *kernel image is generic* that is created to boot on a wide variety of hardware. The Device Drivers for this generic kernel are included as loadable kernel modules (runtime kernel modules) because so many static drivers can cause larger kernel image, or might lead to other problems like conflicting hardware. But some modules are necessary at boot time, for example, to mount the rootfs, so we can not store these modules in the rootfs. In this situation, a temporary rootfs is a good choice to store various kind of modules.
 
-2. The rootfs might lie on complex or encrypted partition that require preparations to mount. The `initrd` can contains utilities to decrypt or mount the necessary components before switching to the actual rootfs.
+2. Another situation is that the rootfs might lie on complex or encrypted partition that require preparations to mount. Kernel cannot decrypt or mount the rootfs itself. Because there are so many encrypting algorithm. With an temporary rootfs, we can store something needed to decrypt or mount the necessary components before switching to the actual rootfs.
 
-3. Some root partition is identified by a UUID or label, the `initrd` can be used to look up this information and mount the correct rootfs.
+3. Some root partition is identified by a UUID or label, so now hardcoding these identifies in kernel is terrible, in the case, the `initrd` can be used to look up this information and mount the correct rootfs.
 
 4. Do early system configuration step like setting up network interfaces, can be done before fully mounting the rootfs.
 
 5. The `initrd` is quite small that provide capability to load by bootloader. After kernel take control, it can run user-space helpers, load needed module to mount real rootfs, even from a different device.
 
-So let's summarize, the use of `initrd` is to separate various kind of initial boot stage from kernel, by that we can avoid having to hardcode handling for so many special cases into kernel. In other word, an **early use-space**, a **temporary rootfs**, is used to separate various kind of hardware booting from kernel, keep the kernel generic as much as possible.
+So let's summarize, the use of `initrd` is to separate initial boot stages from kernel, by that we can avoid having to hardcode handling for so many special cases into kernel. In other word, `initrd` is also called as an **early user-space**. By that we can keep the kernel generic as much as possible and focus to its jobs. Sound like a bit of single responsibility principle here, right 😛?
 
 ## 3. Other concepts
 
