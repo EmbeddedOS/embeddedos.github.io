@@ -41,13 +41,17 @@ So let's summarize, the use of `initrd` is to separate initial boot stages from 
 
 ## 3. Other concepts
 
-<https://docs.kernel.org/filesystems/ramfs-rootfs-initramfs.html>
+There are other concepts that might confuse you because of same purposes but with a slightly different. Let's discover some of them.
 
 ### 3.1. ramfs
 
-### 3.2. initramfs
+A very simple filesystem that
 
-### 3.3. rootfs
+### 3.2. rootfs
+
+Other blog the go deeper into the rootfs concept here: [building rootfs](/posts/building-a-rootfs/)
+
+### 3.3. initramfs
 
 ## 4. Build a initrd image
 
