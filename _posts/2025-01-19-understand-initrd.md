@@ -25,36 +25,33 @@ Back to the `initrd` concept, let's summarize, this rootfs will be loaded into R
 
 ## 2. Why we need initrd?
 
-To answer this question, let's discuss these scenarios, where another component outside the kernel is needed:
+To answer this question, let discuss this scenario. After kernel is booted, and the rootfs (/) mounted, programs can run and further runtime-kernel-modules can be loaded. But to mount the rootfs, some conditions need to be met:
 
-1. For many Linux distributions, *kernel image is generic* that is created to boot on a wide variety of hardware. The Device Drivers for this generic kernel are included as loadable kernel modules (runtime kernel modules) because so many static drivers can cause larger kernel image, or might lead to other problems like conflicting hardware. But some modules are necessary at boot time, for example, to mount the rootfs, so we can not store these modules in the rootfs. In this situation, a temporary rootfs is a good choice to store various kind of modules.
+- The kernel needs the corresponding drivers to access the device on which the rootfs is located (especially SCSI drivers). Some solutions are suggested:
+  - Kernel will contain all these drivers, but those drivers might be conflict to each other.
+  - Also if the kernel contains all of drivers, it becomes very large.
+  - The idea about different kernels for each kind of these things appear, but the problem is it becomes so hard to maintain and optimize, the kernel becomes specific when it should be generic.
+- The rootfs might be encrypted. In this case a password or key is needed to decrypt and mount the filesystem.
 
-2. Another situation is that the rootfs might lie on complex or encrypted partition that require preparations to mount. Kernel cannot decrypt or mount the rootfs itself. Because there are so many encrypting algorithm. With an temporary rootfs, we can store something needed to decrypt or mount the necessary components before switching to the actual rootfs.
+All of these things can be resolved by the concept of `initrd`: running user space programs even before the rootfs is mounted. By that, the system startup is able to occur in two phases, where the kernel comes up with a minimum set of compiled-in drivers whereas additional modules are loaded from initrd.
 
-3. Some root partition is identified by a UUID or label, so now hardcoding these identifies in kernel is terrible, in the case, the `initrd` can be used to look up this information and mount the correct rootfs.
+## 3. Boot flow with initrd
 
-4. Do early system configuration step like setting up network interfaces, can be done before fully mounting the rootfs.
+1. The bootloader loads the kernel and `initrd` to memory and pass the control to kernel. Loading `initrd` actually has no different with loading a kernel that uses boot services to load data to RAM from the boot medium. If the bootloader can load kernel, it is also able to load `initrd` image. Special drivers are not required.
+2. The bootloader informs the kernel that an `initrd` exists and where it is located in memory (through kernel parameters).
+3. If the `initrd` was compressed, the kernel decompresses and mounts it as a temporary rootfs.
+4. The `init` (or `linuxrc`) program is then started, that call now do all the things necessary to mount the real rootfs (using `pivot_root()` syscall).
+5. As soon as the `init` program finishes, it execs the `init` on the new rootfs. The temporary rootfs is unmounted and the boot process continues as normal with the mount of the real rootfs.
 
-5. The `initrd` is quite small that provide capability to load by bootloader. After kernel take control, it can run user-space helpers, load needed module to mount real rootfs, even from a different device.
+> The `init` program in temporary rootfs (from `initrd` image) is different with the real rootfs. The one in `initrd` takes care loading real rootfs part, whereas the one in real rootfs is up to user's applications.
+{: .prompt-info }
+> The filesystem under `initrd` can continue to be accessible if mount point `/initrd` is there.
+{: .prompt-info }
 
-So let's summarize, the use of `initrd` is to separate initial boot stages from kernel, by that we can avoid having to hardcode handling for so many special cases into kernel. In other word, `initrd` is also called as an **early user-space**. By that we can keep the kernel generic as much as possible and focus to its jobs. Sound like a bit of single responsibility principle here, right 😛?
+## 4. Other concepts
 
-## 3. Other concepts
+## 5. The initrd image
 
-There are other concepts that might confuse you because of same purposes but with a slightly different. Let's discover some of them.
-
-### 3.1. ramfs
-
-A very simple filesystem that
-
-### 3.2. rootfs
-
-Other blog the go deeper into the rootfs concept here: [building rootfs](/posts/building-a-rootfs/)
-
-### 3.3. initramfs
-
-## 4. Build a initrd image
+cpio images.
 
 <https://docs.kernel.org/admin-guide/initrd.html>
-
-## 5. How that work?
