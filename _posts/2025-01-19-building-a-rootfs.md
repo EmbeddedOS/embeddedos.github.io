@@ -12,3 +12,4 @@ tags: [rootfs]
 ## 1. What is root file system?
 
 <https://tldp.org/HOWTO/Bootdisk-HOWTO/buildroot.html>
+<https://refspecs.linuxfoundation.org/FHS_3.0/fhs/index.html>
