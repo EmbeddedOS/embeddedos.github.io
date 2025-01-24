@@ -60,12 +60,53 @@ Let's take a look to other concepts that might confuse you:
 
 ## 5. The initrd image
 
-### 5.1. The cpio images
+### 5.1. Why the initrd images are built as cpio images
 
-Why the `initrd` images are built as cpio images,
+The idea is that the `initrd` need to unpacked by the kernel during boot, it means, the kernel has to include at least one format extractor to do that. So which format archive should be choose? tar, cpio, or file system types?
+
+Some of the reasons why cpio is chosen:
+
+- This is kernel internal format, kernel have no depends on others, and could easily make something new. Kernel provides its own tools to create and extract this format anyway, so using an existing standard was preferable, but not essential.
+- cpio is a standard.
+- The code to extract in kernel is simpler and cleaner than any of the various `tar` archive formats. The complete `initramfs` archive format is explained in `buffer-format.rst`, created in `usr/gen_init_cpio.c` and extracted in `init/initramfs.c`. All three together come to less than 26K total text.
+
+### 5.2. Building an initrd image
+
+```bash
+cat > hello.c << EOF
+#include <stdio.h>
+#include <unistd.h>
+
+int main(int argc, char *argv[])
+{
+  printf("Hello world!\n");
+  sleep(999999999);
+}
+EOF
+gcc -static hello.c -o init
+echo init | cpio -o -H newc | gzip > test.cpio.gz
+qemu-system-aarch64 -kernel linux/arch/arm64/boot/Image -initrd test.cpio.gz -machine virt -cpu cortex-a53 -m 1G -nographic
+```
 
 <https://www.linuxfromscratch.org/blfs/view/systemd/postlfs/initramfs.html>
 
 cpio images.
 
 <https://docs.kernel.org/admin-guide/initrd.html>
+
+<https://docs.kernel.org/driver-api/early-userspace/buffer-format.html>
+<https://www.gnu.org/software/cpio/manual/html_node/Tutorial.html>
+
+### 5.3. Embed an initrd image into a Linux kernel
+
+The `initrd` image can be embedded into kernel final binary. We can do this at kernel compile time, by enabling and adding the `initrd` image path into some configurations.
+
+```text
+# This line tells the kernel to use 'initrd.img' as the initrd image
+
+CONFIG_INITRD=y
+
+CONFIG_INITRD_COMMAND_LINE="initrd=initrd.img" 
+```
+
+### 5.4. Can kernel boot without initrd?
