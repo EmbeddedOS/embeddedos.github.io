@@ -85,7 +85,6 @@ cpio reads file and directory path names from its standard input channel and wri
 The resulting cpio archive is a sequence of files and directories concatenated into a single archive, separated by header sections with file meta information, such as filename, inode number, ownership, permissions, and timestamps.
 
 ```text
-cpio archive
  ________________
 | File1 Metadata |
 |________________|
@@ -102,6 +101,8 @@ cpio archive
 | ...            |
 |________________|
 ```
+
+This below example using `find` to list all entries in current folder and pass through `cpio` standard input.
 
 ```bash
 find . -depth -print | cpio -o > /path/archive.cpio
