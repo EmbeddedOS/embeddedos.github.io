@@ -55,24 +55,16 @@ Let's take a look to other concepts that might confuse you:
 - `ramfs` - A simple dynamically resizable RAM-based file system. The data is saved in RAM only and there is no backing store for it. Thus, if we unmount a `ramfs` mounting point every file which is stored there is lost. We can keep writing to the fs until we fill up the entire physical memory, but the VM can't free it because the VM thinks that files should get written to backing store.
 - `ramdisk` - An older version of `ramfs` that create a fake block device out af an area of RAM, the device is used as backing store to fs. The problem with this is waste memory and CPU for unnecessary works. It also required a fs driver to format and interpret data.
 - `tmpfs` - A newer version of `ramfs` that adds size limits, and the ability to write the data to swap space.
-- `rootfs` -
-- `initramfs` - A newer version of `initrd`
-
-```text
-What is rootfs?
-Rootfs, or root file system, is a file system that contains the critical files and directories for a system to operate. It's the first file system that the kernel can access during the boot process. 
-What does rootfs do? 
-Stores programs, device files, configuration files, and more
-Provides mount points for connecting other file systems to the root file system
-Enables further system operations
-How does rootfs work?
-In Linux, rootfs is a temporary RAM-based file system that's replaced by the actual root file system from physical storage or a network 
-The root file system structure is a tree directory structure that starts with a slash ("/") as the root 
-The root file system is usually stored in internal memory (DRAM) or non-volatile memory (FLASH) 
-Where is rootfs used? In Linux and In Docker and Kubernetes. 
-```
+- `rootfs` - A temporary `ramfs` or `tmpfs` that is replaced by the actual rootfs from physical store.
+- `initramfs` - A newer version of `initrd` concepts. Starting with kernel 2.5.x, the old `initrd` protocol is getting (replaced/complemented) with the new `initramfs` protocol. So at this moment when we are talking about `initrd` we are actually referring to `initramfs` concept.
 
 ## 5. The initrd image
+
+### 5.1. The cpio images
+
+Why the `initrd` images are built as cpio images,
+
+<https://www.linuxfromscratch.org/blfs/view/systemd/postlfs/initramfs.html>
 
 cpio images.
 
