@@ -60,7 +60,7 @@ Let's take a look to other concepts that might confuse you:
 
 ## 5. The initrd image
 
-### 5.1. Why the initrd images are built as cpio images
+### 5.1. Why the initrd images are built as compressed cpio images?
 
 The idea is that the `initrd` need to unpacked by the kernel during boot, it means, the kernel has to include at least one format extractor to do that. So which format archive should be choose? tar, cpio, or file system types?
 
@@ -70,7 +70,55 @@ Some of the reasons why cpio is chosen:
 - cpio is a standard.
 - The code to extract in kernel is simpler and cleaner than any of the various `tar` archive formats. The complete `initramfs` archive format is explained in `buffer-format.rst`, created in `usr/gen_init_cpio.c` and extracted in `init/initramfs.c`. All three together come to less than 26K total text.
 
-### 5.2. Building an initrd image
+But why we need to compress the cpio images?
+
+The answer is quite simple, we need it to be as small as possible to fit within the limited RAM and resource during early boot stage. `gzip` provides a good balance between compression ration and decompression speed, so it might be the best choice for us.
+
+### 5.2. The cpio format
+
+cpio (copy in and out) is a general file archiver utility and its associated file format.
+
+#### 5.2.1. Archive Creation
+
+cpio reads file and directory path names from its standard input channel and writes the resulting archive byte stream to its standard output. Cpio is therefore typically used other utilities that generate the list of files to be archived, such as `find` command.
+
+The resulting cpio archive is a sequence of files and directories concatenated into a single archive, separated by header sections with file meta information, such as filename, inode number, ownership, permissions, and timestamps.
+
+```text
+cpio archive
+ ________________
+| File1 Metadata |
+|________________|
+| File1 Content  |
+|                |
+|________________|
+| File2 Metadata |
+|________________|
+| File2 Content  |
+|                |
+|________________|
+| Dir1 Metadata  |
+|________________|
+| ...            |
+|________________|
+```
+
+```bash
+find . -depth -print | cpio -o > /path/archive.cpio
+```
+
+> cpio does not compress any content, but resulting archives are often compressed using `gzip`.
+{: .prompt-info }
+
+```bash
+find . -depth -print | cpio -o | gzip > /path/archive.cpio.gz
+```
+
+#### 5.2.2. Extraction
+
+cpio reads an archive from its standard input and recreates the archived files in the OS's file system. In `initrd` case, extracting is already taken care by the kernel itself.
+
+### 5.3. Building an initrd image
 
 ```bash
 cat > hello.c << EOF
@@ -88,16 +136,10 @@ echo init | cpio -o -H newc | gzip > test.cpio.gz
 qemu-system-aarch64 -kernel linux/arch/arm64/boot/Image -initrd test.cpio.gz -machine virt -cpu cortex-a53 -m 1G -nographic
 ```
 
-<https://www.linuxfromscratch.org/blfs/view/systemd/postlfs/initramfs.html>
-
-cpio images.
-
+<https://docs.kernel.org/filesystems/ramfs-rootfs-initramfs.html>
 <https://docs.kernel.org/admin-guide/initrd.html>
 
-<https://docs.kernel.org/driver-api/early-userspace/buffer-format.html>
-<https://www.gnu.org/software/cpio/manual/html_node/Tutorial.html>
-
-### 5.3. Embed an initrd image into a Linux kernel
+### 5.4. Embed an initrd image into a Linux kernel
 
 The `initrd` image can be embedded into kernel final binary. We can do this at kernel compile time, by enabling and adding the `initrd` image path into some configurations.
 
@@ -109,4 +151,8 @@ CONFIG_INITRD=y
 CONFIG_INITRD_COMMAND_LINE="initrd=initrd.img" 
 ```
 
-### 5.4. Can kernel boot without initrd?
+## 6. Common questions
+
+### 6.1. Can kernel boot without initrd?
+
+### 6.2. Can
