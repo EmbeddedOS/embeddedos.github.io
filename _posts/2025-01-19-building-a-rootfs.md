@@ -7,6 +7,9 @@ author: Cong
 date: 2025-01-19 00:01:00 +0800
 categories: [Linux, rootfs]
 tags: [rootfs]
+image:
+  path: assets/img/rootfs.jpeg
+  alt: Rootfs.
 ---
 
 ## 1. What is root file system?
