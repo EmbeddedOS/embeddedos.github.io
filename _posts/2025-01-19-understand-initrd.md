@@ -1,7 +1,7 @@
 ---
-title: "Understand initrd, build a minimum initrd image for Linux system."
+title: "Discover the initrd concept in Linux system."
 description: >-
-  Let's dig deeper into of initrd concept in Linux system and the differences between initrd, ramfs, initramfs, and rootfs.
+  Let's dive deeper into the concept of initrd, explore why it's needed, and how the Linux Kernel boots with this `temporary rootfs`.
 
 author: Cong
 date: 2025-01-19 00:00:00 +0800
