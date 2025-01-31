@@ -140,6 +140,53 @@ echo init | cpio -o -H newc | gzip > test.cpio.gz
 qemu-system-aarch64 -kernel linux/arch/arm64/boot/Image -initrd test.cpio.gz -machine virt -cpu cortex-a53 -m 1G -nographic
 ```
 
+### How the kernel mount the initrd
+
+### How the kernel run init program
+
+```c
+asmlinkage __visible __init __no_sanitize_address __noreturn __no_stack_protector
+void start_kernel(void)
+{
+    ...
+
+    /* Do the rest non-__init'ed, we're now alive */
+    rest_init();
+}
+
+static noinline void __ref __noreturn rest_init(void)
+{
+    ...
+
+    pid = user_mode_thread(kernel_init, NULL, CLONE_FS);
+
+    ...
+}
+
+static int __ref kernel_init(void *unused)
+{
+    ...
+        if (ramdisk_execute_command) {
+        ret = run_init_process(ramdisk_execute_command);
+        if (!ret)
+            return 0;
+        pr_err("Failed to execute %s (error %d)\n",
+               ramdisk_execute_command, ret);
+    }
+
+    ...
+
+        if (!try_to_run_init_process("/sbin/init") ||
+        !try_to_run_init_process("/etc/init") ||
+        !try_to_run_init_process("/bin/init") ||
+        !try_to_run_init_process("/bin/sh"))
+        return 0;
+
+    panic("No working init found.  Try passing init= option to kernel. "
+          "See Linux Documentation/admin-guide/init.rst for guidance.");
+}
+```
+
 <https://docs.kernel.org/filesystems/ramfs-rootfs-initramfs.html>
 <https://docs.kernel.org/admin-guide/initrd.html>
 
