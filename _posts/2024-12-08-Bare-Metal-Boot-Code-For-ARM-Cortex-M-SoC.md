@@ -8,8 +8,8 @@ date: 2024-12-08 00:00:00 +0800
 categories: [ARM, Bootloader]
 tags: [ARM, BareMetal, Bootloader, Driver, Cortex-M]
 image:
-  path: assets/img/qemu_logo.jpg
-  alt: ARM baremetal boot code.
+  path: assets/img/arm_cortex_m.png
+  alt: ARM bare metal boot code.
 ---
 
 ## 1. Overview
