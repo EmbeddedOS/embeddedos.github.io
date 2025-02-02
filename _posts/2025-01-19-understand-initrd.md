@@ -122,59 +122,94 @@ find . -depth -print | cpio -o | gzip > /path/archive.cpio.gz
 
 cpio reads an archive from its standard input and recreates the archived files in the OS's file system. In `initrd` case, extracting is already taken care by the kernel itself.
 
-### 5.3. Building an initrd image
+### 5.3. Making an initrd image
+
+#### 5.3.1. How kernel run the init program
+
+After mounting the initrd, the kernel try to run the `init` program. Take a look to this piece of kernel code:
+
+```c
+asmlinkage __visible __init __no_sanitize_address __noreturn __no_stack_protector
+void start_kernel(void)
+{
+    ...
+    /* Do the rest non-__init'ed, we're now alive */
+    rest_init();
+}
+
+static noinline void __ref __noreturn rest_init(void)
+{
+    ...
+    pid = user_mode_thread(kernel_init, NULL, CLONE_FS);
+    ...
+}
+
+static int __ref kernel_init(void *unused)
+{
+    ...
+    if (ramdisk_execute_command) {
+        ret = run_init_process(ramdisk_execute_command);
+        if (!ret)
+            return 0;
+        pr_err("Failed to execute %s (error %d)\n",
+               ramdisk_execute_command, ret);
+    }
+    ...
+    if (!try_to_run_init_process("/sbin/init") ||
+        !try_to_run_init_process("/etc/init") ||
+        !try_to_run_init_process("/bin/init") ||
+        !try_to_run_init_process("/bin/sh"))
+        return 0;
+
+    panic("No working init found.  Try passing init= option to kernel. "
+          "See Linux Documentation/admin-guide/init.rst for guidance.");
+}
+```
+
+The `Arch` kernel boot code run first, and then jump to `start_kernel()` that initialize stuffs, do mount the initrd image, and then run the first user mode thread `kernel_init()`. This function will try to run the `init` program in current rootfs. Start by trying to run `ramdisk_execute_command` program, and then `/sbin/init`, `/etc/init` and so on. To dive deeper into the kernel boot process on AArch64, visit this blog [minimal rootfs](/posts/Linux-Kernel-booting-with-Aarch64/)
+
+> The `ramdisk_execute_command` variable have the default value as `/init`, the user can replace this variable's value by passing kernel parameters `initrd=<path>`. In case `noinitrd` is passed to kernel parameters, this value will be `NULL`. As a result `/sbin/init` will be tried first.
+{: .prompt-info }
+> Kernel executes the `init` program as its first process that is not expected to exit.
+{: .prompt-info }
+
+#### 5.3.2. Contents of initrd
+
+An `initrd` is a complete self-contained rootfs for Linux. A rootfs normally includes basic file system structure, minimum set of directories (`/dev`, `/proc`, `/etc`, `/bin`, etc.), utilities, shared libs, devices, etc. Take a look to this blog to explore what is rootfs, and build a simple one: [minimal rootfs](/posts/building-a-rootfs/).
+
+To understand how `initrd` we don't need to build a complete rootfs. Just remember, the kernel will looking for `/init` program, right?. So we build a rootfs with only one file `/init`, and then compress into an compressed cpio image.
 
 ```bash
-cat > hello.c << EOF
+cat > init.c << EOF
 #include <stdio.h>
 #include <unistd.h>
 
 int main(int argc, char *argv[])
 {
-  printf("Hello world!\n");
+  printf("Hi initrd!\n");
   sleep(999999999);
 }
 EOF
-gcc -static hello.c -o init
+aarch64-none-linux-gnu-gcc -static init.c -o init
 echo init | cpio -o -H newc | gzip > test.cpio.gz
+```
+
+Boot the system with QEMU:
+
+```bash
 qemu-system-aarch64 -kernel linux/arch/arm64/boot/Image -initrd test.cpio.gz -machine virt -cpu cortex-a53 -m 1G -nographic
 ```
 
-\Documentation\driver-api\early-userspace\early_userspace_support.rst
+> In fact, the `/init` should do more to load more drivers, mount the real rootfs, and run the init program and that.
+{: .prompt-info }
 
-```text
-How does it work?
-=================
+## 6. Some tricky questions
 
-The kernel has currently 3 ways to mount the root filesystem:
+### 6.1. Can kernel boot without initrd?
 
-a) all required device and filesystem drivers compiled into the kernel, no
-   initrd.  init/main.c:init() will call prepare_namespace() to mount the
-   final root filesystem, based on the root= option and optional init= to run
-   some other init binary than listed at the end of init/main.c:init().
+### 6.2. Is it possible to use initrd as the final rootfs?
 
-b) some device and filesystem drivers built as modules and stored in an
-   initrd.  The initrd must contain a binary '/linuxrc' which is supposed to
-   load these driver modules.  It is also possible to mount the final root
-   filesystem via linuxrc and use the pivot_root syscall.  The initrd is
-   mounted and executed via prepare_namespace().
-
-c) using initramfs.  The call to prepare_namespace() must be skipped.
-   This means that a binary must do all the work.  Said binary can be stored
-   into initramfs either via modifying usr/gen_init_cpio.c or via the new
-   initrd format, an cpio archive.  It must be called "/init".  This binary
-   is responsible to do all the things prepare_namespace() would do.
-
-   To maintain backwards compatibility, the /init binary will only run if it
-   comes via an initramfs cpio archive.  If this is not the case,
-   init/main.c:init() will run prepare_namespace() to mount the final root
-   and exec one of the predefined init binaries.
-
-Bryan O'Sullivan <bos@serpentine.com>
-
-```
-
-### How the kernel mount the initrd
+### 6.3. How the kernel mount the initrd?
 
 ```c
 static int __init populate_rootfs(void)
@@ -189,55 +224,9 @@ static int __init populate_rootfs(void)
 rootfs_initcall(populate_rootfs);
 ```
 
-### How the kernel run init program
+### 6.4. What if the init program exit?
 
-```c
-asmlinkage __visible __init __no_sanitize_address __noreturn __no_stack_protector
-void start_kernel(void)
-{
-    ...
-
-    /* Do the rest non-__init'ed, we're now alive */
-    rest_init();
-}
-
-static noinline void __ref __noreturn rest_init(void)
-{
-    ...
-
-    pid = user_mode_thread(kernel_init, NULL, CLONE_FS);
-
-    ...
-}
-
-static int __ref kernel_init(void *unused)
-{
-    ...
-        if (ramdisk_execute_command) {
-        ret = run_init_process(ramdisk_execute_command);
-        if (!ret)
-            return 0;
-        pr_err("Failed to execute %s (error %d)\n",
-               ramdisk_execute_command, ret);
-    }
-
-    ...
-
-        if (!try_to_run_init_process("/sbin/init") ||
-        !try_to_run_init_process("/etc/init") ||
-        !try_to_run_init_process("/bin/init") ||
-        !try_to_run_init_process("/bin/sh"))
-        return 0;
-
-    panic("No working init found.  Try passing init= option to kernel. "
-          "See Linux Documentation/admin-guide/init.rst for guidance.");
-}
-```
-
-<https://docs.kernel.org/filesystems/ramfs-rootfs-initramfs.html>
-<https://docs.kernel.org/admin-guide/initrd.html>
-
-### 5.4. Embed an initrd image into a Linux kernel
+### 6.5. Embed an initrd image into a Linux kernel
 
 The `initrd` image can be embedded into kernel final binary. We can do this at kernel compile time, by enabling and adding the `initrd` image path into some configurations.
 
@@ -248,9 +237,3 @@ CONFIG_INITRD=y
 
 CONFIG_INITRD_COMMAND_LINE="initrd=initrd.img" 
 ```
-
-## 6. Some tricky questions
-
-### 6.1. Can kernel boot without initrd?
-
-### 6.2. Is it possible to use initrd as the final rootfs?
