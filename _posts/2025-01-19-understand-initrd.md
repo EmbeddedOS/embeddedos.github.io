@@ -102,7 +102,7 @@ The resulting cpio archive is a sequence of files and directories concatenated i
 |________________|
 ```
 
-This below example using `find` to list all entries in current folder and pass through `cpio` standard input.
+This below example using `find` to list all entries in current folder and pass through `cpio`'s standard input. The `cpio` and then stream bytes to its standard output as a file `/path/archive.cpio`.
 
 ```bash
 find . -depth -print | cpio -o > /path/archive.cpio
@@ -152,8 +152,8 @@ CONFIG_INITRD=y
 CONFIG_INITRD_COMMAND_LINE="initrd=initrd.img" 
 ```
 
-## 6. Common questions
+## 6. Some tricky questions
 
 ### 6.1. Can kernel boot without initrd?
 
-### 6.2. Can
+### 6.2. Is it possible to use initrd as the final rootfs?
