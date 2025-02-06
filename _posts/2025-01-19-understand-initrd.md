@@ -200,12 +200,14 @@ Boot the system with QEMU:
 qemu-system-aarch64 -kernel linux/arch/arm64/boot/Image -initrd test.cpio.gz -machine virt -cpu cortex-a53 -m 1G -nographic
 ```
 
-> In fact, the `/init` should do more to load more drivers, mount the real rootfs, and run the init program and that.
+> In fact, the `/init` should do more tasks such as loading more drivers, mounting the real rootfs, and run the init program and that.
 {: .prompt-info }
 
 ## 6. Some tricky questions
 
 ### 6.1. Can kernel boot without initrd?
+
+Of course, yes, `initrd` is optional and the kernel can mount rootfs directly by either having fixed rootfs name  built-in kernel or passing the rootfs name via the kernel parameter `root=<path>`. The needed drivers for mounting the rootfs also are required to build into kernel image.
 
 ### 6.2. Is it possible to use initrd as the final rootfs?
 
