@@ -228,6 +228,32 @@ rootfs_initcall(populate_rootfs);
 
 ### 6.4. What if the init program exit?
 
+Kernel panic when we try to call `exit()` in the `init` program.
+
+```text
+[    1.622477] Kernel panic - not syncing: Attempted to kill init! exitcode=0x00000000
+[    1.623562] CPU: 0 UID: 0 PID: 1 Comm: init Not tainted 6.13.0-rc5-00163-gab75170520d4-dirty #4
+[    1.625479] Hardware name: linux,dummy-virt (DT)
+[    1.626507] Call trace:
+[    1.627129]  show_stack+0x18/0x24 (C)
+[    1.628325]  dump_stack_lvl+0x60/0x80
+[    1.628974]  dump_stack+0x18/0x24
+[    1.629515]  panic+0x168/0x360
+[    1.629785]  make_task_dead+0x0/0x17c
+[    1.630240]  do_group_exit+0x34/0x9c
+[    1.630655]  __arm64_sys_exit_group+0x18/0x20
+[    1.631410]  invoke_syscall+0x48/0x104
+[    1.632025]  el0_svc_common.constprop.0+0x40/0xe0
+[    1.632869]  do_el0_svc+0x1c/0x28
+[    1.633456]  el0_svc+0x30/0xcc
+[    1.633797]  el0t_64_sync_handler+0x10c/0x138
+[    1.634498]  el0t_64_sync+0x198/0x19c
+[    1.635991] Kernel Offset: disabled
+[    1.636681] CPU features: 0x000,00000c00,00800000,0200421b
+[    1.637640] Memory Limit: none
+[    1.638805] ---[ end Kernel panic - not syncing: Attempted to kill init! exitcode=0x00000000 ]---
+```
+
 ### 6.5. Embed an initrd image into a Linux kernel
 
 The `initrd` image can be embedded into kernel final binary. We can do this at kernel compile time, by enabling and adding the `initrd` image path into some configurations.
