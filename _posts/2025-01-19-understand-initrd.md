@@ -254,6 +254,18 @@ Kernel panic when we try to call `exit()` in the `init` program.
 [    1.638805] ---[ end Kernel panic - not syncing: Attempted to kill init! exitcode=0x00000000 ]---
 ```
 
+The code that checking for global init task before exiting a process. The function `is_global_init()` is literally compare the process id with `1`.
+
+```c
+void __noreturn do_exit(long code)
+{
+    ...
+    if (unlikely(is_global_init(tsk)))
+        panic("Attempted to kill init! exitcode=0x%08x\n",
+            tsk->signal->group_exit_code ?: (int)code);
+}
+```
+
 ### 6.5. Embed an initrd image into a Linux kernel
 
 The `initrd` image can be embedded into kernel final binary. We can do this at kernel compile time, by enabling and adding the `initrd` image path into some configurations.
