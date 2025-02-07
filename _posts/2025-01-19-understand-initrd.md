@@ -211,7 +211,11 @@ Of course, yes, `initrd` is optional and the kernel can mount rootfs directly by
 
 ### 6.2. Is it possible to use initrd as the final rootfs?
 
+Well, It depends on your purposes. The `initrd` is based on RAM, so everything you write to this filesystem is temporary, that will lost when you reboot the system. So if your requirements are testing temporary things, or expect higher performance filesystem access, etc, you can use `initrd` as the final rootfs. Another use case is that in embedded systems, [DBAN](https://dban.org/), that could package anything they needs into the `initrd` and just never do the switching. Otherwise the real rootfs that based on a disk device might be better.
+
 ### 6.3. How the kernel mount the initrd?
+
+Start by loading `populate_rootfs()` module.
 
 ```c
 static int __init populate_rootfs(void)
@@ -268,12 +272,4 @@ void __noreturn do_exit(long code)
 
 ### 6.5. Embed an initrd image into a Linux kernel
 
-The `initrd` image can be embedded into kernel final binary. We can do this at kernel compile time, by enabling and adding the `initrd` image path into some configurations.
-
-```text
-# This line tells the kernel to use 'initrd.img' as the initrd image
-
-CONFIG_INITRD=y
-
-CONFIG_INITRD_COMMAND_LINE="initrd=initrd.img" 
-```
+The config option `CONFIG_INITRAMFS_SOURCE` (in General Setup in `menuconfig`, and living in `usr/Kconfig`) can be used to specify a source for the initramfs archive, which will automatically be incorporated into the resulting binary.
