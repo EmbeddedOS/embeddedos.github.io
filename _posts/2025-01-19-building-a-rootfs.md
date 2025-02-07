@@ -1,7 +1,7 @@
 ---
 title: "Building a root filesystem for Linux system"
 description: >-
-  Understand the rootfs concept, how to build a minimum rootfs for Linux system.
+  Understand the rootfs concept, how to build a minimum one, and discover other common tools like Busybox, Yocto, Buildroot.
 
 author: Cong
 date: 2025-01-19 00:01:00 +0800
@@ -11,6 +11,10 @@ image:
   path: assets/img/rootfs.jpeg
   alt: Rootfs.
 ---
+
+## 1. File system
+
+## 2. File system format
 
 ## 1. What is root file system?
 
