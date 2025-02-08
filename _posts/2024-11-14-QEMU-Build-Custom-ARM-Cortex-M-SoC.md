@@ -144,4 +144,4 @@ The STM32F407 SoC have various peripherals, some of them are not supported (or d
      - Connect peripheral interrupt line.
    - Load the kernel.
 
-Continue.
+TODO: Continue this blog.

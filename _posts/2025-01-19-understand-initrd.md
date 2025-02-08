@@ -258,7 +258,7 @@ Kernel panic when we try to call `exit()` in the `init` program.
 [    1.638805] ---[ end Kernel panic - not syncing: Attempted to kill init! exitcode=0x00000000 ]---
 ```
 
-The code that checking for global init task before exiting a process. The function `is_global_init()` is literally compare the process id with `1`.
+The code that checking for global init task before exiting a process. The function `is_global_init()` is literally comparing the process id with `1`.
 
 ```c
 void __noreturn do_exit(long code)

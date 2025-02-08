@@ -13,3 +13,7 @@ image:
 ---
 
 ## 1. Overview
+
+Take a look to the bare metal [source code](https://github.com/EmbeddedOS/ARM-Cortex-M-BareMetal).
+
+TODO: Continue this blog.
