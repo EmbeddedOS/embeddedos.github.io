@@ -97,23 +97,50 @@ disk partition                      ||
 
 ### 1.3. file system types
 
-<https://en.wikipedia.org/wiki/File_system>
-
-- Disk file systems: FAT (FAT12, FAT16, FAT32), exFAT, NTFS, ReFS, HFS and HFS+, HPFS, APFS, UFS, ext2, ext3, ext4, XFS, btrfs, Files-11, Veritas File System, VMFS, ZFS, ReiserFS, NSS and ScoutFS.
-- Flash file systems.
-- Network file systems.
-- Special file systems: virtual filesystems.
+- Disk file systems: based on disk storage media. Some disk file system formats: FAT (FAT12, FAT16, FAT32), exFAT, NTFS, ext2, ext3, ext4, XFS.
+- Flash file systems: A file system that is designed for storing files on flash memory.
+- Network file systems: A file system that acts as a client for a remote file access protocol, providing access to files on a server.
+- Special file systems: Some file system expose elements of the OS as files so they can be acted on via the filesystem API (open()/read()/write()/close()/etc.). For example, these are common in Unix-like OSes:
+  - `sysfs` expose special files that can be used to query and configure Linux Kernel information.
+  - `udev`, `devfs` expose I/O devices or pseudo-devices as special files.
+  - `proc` expose process information as special files.
 
 ### 1.4. Virtual file system
 
-<https://en.wikipedia.org/wiki/Virtual_file_system>
+A virtual file system (VFS) is an abstraction layer within an OS that provides a unified interface for accessing different types of file systems. By that we can hiding the details of how each file system storages data.
+
+```text
+ _____________________________________________________________
+| User                                                        |
+|       |app1|              |app2|              |app3|        |
+|_________||__________________||__________________||__________|
+     _____||__________________||__________________||__________
+    |unified interface: read(), write(), open(), close(), etc.|
+          /\                  /\                  /\
+ _________||__________________||__________________||__________
+|        _||__________________||__________________||_         |
+|       |_  ___________Virtual_Filesystem_________  _|        |
+|         ||                  ||                  ||          |
+|Kernel   \/                  \/                  \/          |
+|    |Ext4 driver|       |NFS module|     |Proc subsystem|    |
+|_________/\__________________/\______________________________|
+          ||                  ||
+ _________||________   _______||_________
+|Hw       ||        | |Cloud  ||         |
+|         \/        | |       \/         |
+|   Ext4 filesystem | |   Network fs     |
+|___________________| |__________________|
+```
 
 ### 1.5. File system implementation
 
-<https://en.wikipedia.org/wiki/File_system>
+Unix-like OSes create a VFS which makes all the files on all the devices appear to exist in a single hierarchy. That means, in those systems, there is one **root directory**, and every file existing on the system is located under it somewhere.
 
-## 1. What is root file system?
+To access the files on another device, the OS must first be informed where in the directory tree those files should appear. This process is called **mounting** a file system. For example, to access the files on a CD-ROM, one must tell the OS *Take the file system from this CD-ROM and make it appear under such-and-such directory*. The directory given to the OS is called **mount point**, it might, for example, the `/media` directory exists as a mount point for removable media such as CDs, DVDs, USB drives. Or `/mnt` for temporary mounts initiated by the user. They may be empty, or it may contain subdirectories for mounting individual devices.
 
+## 2. Root directory
+
+<https://en.wikipedia.org/wiki/Root_directory>
 <https://tldp.org/HOWTO/Bootdisk-HOWTO/buildroot.html>
 <https://refspecs.linuxfoundation.org/FHS_3.0/fhs/index.html>
 
