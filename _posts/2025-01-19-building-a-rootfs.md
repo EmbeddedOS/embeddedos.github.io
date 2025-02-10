@@ -285,8 +285,26 @@ For Linux systems, there are more requirements and recommendations.
 
 ### 2.2. Build a root file system
 
+Creating the rootfs involves selecting files necessary for the system to run. A rootfs must contain everything needed to support a full Linux system. To be able to do this, the disk must include the minimum requirements for a Linux system:
+
+- The basic file system structure.
+- Minimum set of directories: `/dev`, `/proc`, `/bin`, `/etc`, `/lib`, `/usr`, `/tmp`.
+- Basic set of utilities: `sh`, `cp`, `ls`, `mv`, etc.
+- Minimum set of config files: `rc`, `inittab`, `fstab`, etc.
+- Devices: `/dev/hd*`, `/dev/tty*`, `/dev/fd0`, etc.
+- Runtime libraries to provide basic functions used by utilities.
+
+#### 2.2.1. Creating the filesystem
+
+Building such a rootfs require a spare device that is large enough to hold all the files. There are several choice:
+
+- Use a *ramdisk*.
+- You have unused hard disk partition that is large enough.
+- Use a loopback device, which allows a disk file to be treated as a device.
+
+##### 2.2.1.1. Use
+
 <https://tldp.org/HOWTO/Bootdisk-HOWTO/buildroot.html>
-<https://refspecs.linuxfoundation.org/FHS_3.0/fhs/index.html>
 
 Building a simple rootfs with busybox
 
@@ -308,37 +326,4 @@ mount -t proc none /proc
 EOF
 chmod -R 777 etc/init.d/rcS
 find . -print0 | cpio --null -ov --format=newc | gzip -9 > ../rootfs.cpio.gz
-```
-
-\Documentation\driver-api\early-userspace\early_userspace_support.rst
-
-```text
-How does it work?
-=================
-
-The kernel has currently 3 ways to mount the root filesystem:
-
-a) all required device and filesystem drivers compiled into the kernel, no
-   initrd.  init/main.c:init() will call prepare_namespace() to mount the
-   final root filesystem, based on the root= option and optional init= to run
-   some other init binary than listed at the end of init/main.c:init().
-
-b) some device and filesystem drivers built as modules and stored in an
-   initrd.  The initrd must contain a binary '/linuxrc' which is supposed to
-   load these driver modules.  It is also possible to mount the final root
-   filesystem via linuxrc and use the pivot_root syscall.  The initrd is
-   mounted and executed via prepare_namespace().
-
-c) using initramfs.  The call to prepare_namespace() must be skipped.
-   This means that a binary must do all the work.  Said binary can be stored
-   into initramfs either via modifying usr/gen_init_cpio.c or via the new
-   initrd format, an cpio archive.  It must be called "/init".  This binary
-   is responsible to do all the things prepare_namespace() would do.
-
-   To maintain backwards compatibility, the /init binary will only run if it
-   comes via an initramfs cpio archive.  If this is not the case,
-   init/main.c:init() will run prepare_namespace() to mount the final root
-   and exec one of the predefined init binaries.
-
-Bryan O'Sullivan <bos@serpentine.com>
 ```
