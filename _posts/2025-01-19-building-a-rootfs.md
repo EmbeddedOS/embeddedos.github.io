@@ -296,13 +296,48 @@ Creating the rootfs involves selecting files necessary for the system to run. A 
 
 #### 2.2.1. Creating the filesystem
 
-Building such a rootfs require a spare device that is large enough to hold all the files. There are several choice:
+Building such a rootfs require a spare device that is large enough to hold all the files. There are several choices:
 
-- Use a *ramdisk*.
+- Use a *ramdisk*, the memory is used to simulate a disk drive.
 - You have unused hard disk partition that is large enough.
 - Use a loopback device, which allows a disk file to be treated as a device.
 
-##### 2.2.1.1. Use
+##### 2.2.1.1. Using the RAM disk block device with Linux
+
+The RAM disk driver is a way to use main system memory as a block device. It is required for `initrd`, and initial file system used if you need to load modules in order to access the rootfs, I have a full blog about the `initrd` here, take a look [initrd.](/posts/understand-initrd/). It can also be used for a temporary filesystem, since the contents are erased on reboot.
+
+Make sure we have the ramdisk device node first:
+
+```bash
+ls /dev/ram*
+```
+
+If not, create a device node with `mknod`, the RAM disk is block device with major number 1 and minor start from 0. So to create a new device node to expose to user space. We run:
+
+```bash
+mknod -m 660 /dev/ram0 b 1 0
+```
+
+> Check all the [Linux device list here](https://www.kernel.org/doc/html/latest/admin-guide/devices.html)
+{: .prompt-info }
+
+Decide on the RAM disk size that you want, for example, 20MB in this case:
+
+```bash
+dd if=/dev/zero of=/dev/ram0 bs=1k count=20480
+```
+
+<https://www.kernel.org/doc/Documentation/blockdev/ramdisk.txt>
+
+##### 2.2.1.2. Using a loopback device
+
+<https://en.wikipedia.org/wiki/Loop_device>
+
+#### 2.2.2. Populating the file system
+
+## 3. Common tools
+
+### 3.1. Busybox
 
 <https://tldp.org/HOWTO/Bootdisk-HOWTO/buildroot.html>
 
