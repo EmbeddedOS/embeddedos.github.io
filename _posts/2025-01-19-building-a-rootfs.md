@@ -327,11 +327,65 @@ Decide on the RAM disk size that you want, for example, 20MB in this case:
 dd if=/dev/zero of=/dev/ram0 bs=1k count=20480
 ```
 
-<https://www.kernel.org/doc/Documentation/blockdev/ramdisk.txt>
+Make a filesystem on it, for example, ext4 file system:
+
+```bash
+mkfs.ext4 -vm0 /dev/ram0 20480
+```
+
+> `mkfs.ext4` command is equal to `mke2fs -t ext4`. The `-m 0` option here to prevent the command reserving space for root, and hence provides more usable space on the disk.
+{: .prompt-info }
+
+Mount it to a temporary mount point, let's say `/mnt/rootfs`, populate it and unmount it again.
+
+```bash
+mount /dev/ram0 /mnt/rootfs
+
+# Populating the rootfs ...
+
+umount /mnt/rootfs
+```
+
+About how to populate the rootfs, we'll talk more detail in the **Populating the file system** section. After that, you might want to put the RAM disk image onto an drive or a filesystem image.
+
+```bash
+# Writing to a file system image.
+dd if=/dev/ram0 bs=1k count=20480 of=/tmp/rootfs.img
+
+# Or compressed the file system image (For initrd image).
+dd if=/dev/ram0 bs=1k count=20480 | gzip -v9 > /tmp/rootfs.img.gz
+
+# Put onto other drives if any, for example a floppy.
+dd if=/tmp/rootfs.img of=/dev/fd0 bs=1k
+```
 
 ##### 2.2.1.2. Using a loopback device
 
-<https://en.wikipedia.org/wiki/Loop_device>
+A loop device is a pseudo-device that makes a computer file accessible as a block device. To make a loop device, there are several choices:
+
+- Associating loop device with an exist file system image.
+  1. Create a raw file system image: `dd if=/dev/zero of=/tmp/rootfs.img bs=1k count=20480`
+  2. Format file system: `mkfs.ext4 -vm0 /tmp/rootfs.img 20480`
+  3. Associate with a loop device: `losetup /dev/loop0 /tmp/rootfs.img`
+  4. Mount the loop device to a temporary mount point: `mount /dev/loop0 /mnt/rootfs`
+  5. Populate the rootfs and umount.
+  6. Delete the loopback device: `losetup -d /dev/loop0`
+- Create a loop device node, work on that, and writing the result onto a new file system image:
+  1. Make a loop device node: `mknod /dev/loop0 b 7 0`
+  2. Decide the size for the image: `dd if=/dev/zero of=/dev/loop0 bs=1k count=20480`
+  3. Format the image: `mkfs.ext4 -vm0 /dev/loop0 20480`
+  4. Mount the loop device to a temporary mount point: `mount /dev/loop0 /mnt/rootfs`
+  5. Populate the rootfs and umount.
+  6. Writing into a file system image: `dd if=/dev/loop0 bs=1k count=20480 of=/tmp/rootfs.img`
+  7. Delete the loopback device: `losetup -d /dev/loop0`
+- Using `mount` utility to write directly to a file system, passing the create a loop device node step.
+  1. Create a raw file system image: `dd if=/dev/zero of=/tmp/rootfs.img bs=1k count=20480`
+  2. Format file system: `mkfs.ext4 -vm0 /tmp/rootfs.img 20480`
+  3. Mount this image to a temporary mount point: `mount -o loop /tmp/rootfs.img /mnt/rootfs`
+  4. Populate the rootfs and umount.
+
+> Check the list of mounted filesystems and information in `/proc/mounts`.
+{: .prompt-info }
 
 #### 2.2.2. Populating the file system
 
