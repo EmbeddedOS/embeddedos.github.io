@@ -393,6 +393,21 @@ A loop device is a pseudo-device that makes a computer file accessible as a bloc
 
 ### 3.1. Busybox
 
+Busybox is a software suite that provides several Unix utilities in a **single executable**. It also includes a complete bootstrapping toolchain (ie. `init`). The tricky part is that when you execute a command, it seems it work separately, but in fact, all of these commands are linked into the only one executable `busybox` binary. For example, you run `ls`, it acts like `/bin/ls`, but actually is linked (hard or symbolic links) to the `/bin/busybox`. Busybox would see that its `name` is `ls` and act like the `ls` program. You can also run the command directly with the `busybox` binary by adding the command as an argument, similar thing that we do with sudo. For example, `busybox ls`.
+
+By providing everything, but in only one binary, this can keeps the user-land tools at a minimum. So every time, memory space is a concern, `busybox` is one of the best choices.
+
+> `initrd` normally using `busybox` to provide early-userspace tools, and also the `/init` program to boot up the system.
+{: .prompt-info }
+
+#### 3.1.1. Populating a rootfs with Busybox
+
+Building a busybox image is quite similar to building the kernel:
+
+```bash
+
+```
+
 <https://tldp.org/HOWTO/Bootdisk-HOWTO/buildroot.html>
 
 Building a simple rootfs with busybox
