@@ -376,7 +376,7 @@ A loop device is a pseudo-device that makes a computer file accessible as a bloc
   3. Format the image: `mkfs.ext4 -vm0 /dev/loop0 20480`
   4. Mount the loop device to a temporary mount point: `mount /dev/loop0 /mnt/rootfs`
   5. Populate the rootfs and umount.
-  6. Writing into a file system image: `dd if=/dev/loop0 bs=1k count=20480 of=/tmp/rootfs.img`
+  6. Writing into a file system image: `dd if=/dev/loop0 bs=1k of=/tmp/rootfs.img`
   7. Delete the loopback device: `losetup -d /dev/loop0`
 - Using `mount` utility to write directly to a file system, passing the create a loop device node step.
   1. Create a raw file system image: `dd if=/dev/zero of=/tmp/rootfs.img bs=1k count=20480`
@@ -388,6 +388,68 @@ A loop device is a pseudo-device that makes a computer file accessible as a bloc
 {: .prompt-info }
 
 #### 2.2.2. Populating the file system
+
+After mounting the device into a temporary mount point, let's say `/mnt/rootfs`, now is time to perform populating. The rootfs require a minimum set of basic file system structure. So we make a basic ones:
+
+```bash
+mkdir -p /mnt/rootfs/{bin,sbin,etc,proc,sys,usr/{bin,sbin},dev,lib,var/{log,run}}
+```
+
+##### 2.2.2.1. /dev directory
+
+This directory contains special that can not be created in a normal way. To create device special files uses `mknod` command instead.
+
+Create basic device nodes:
+
+```bash
+# Device physical memory.
+mknod -m 660 /mnt/rootfs/dev/mem c 1 1
+
+# Create virtual consoles.
+mknod -m 660 /mnt/rootfs/dev/tty2 c 4 2
+mknod -m 660 /mnt/rootfs/dev/tty3 c 4 3
+mknod -m 660 /mnt/rootfs/dev/tty4 c 4 4
+
+# Create Null device.
+mknod -m 660 /mnt/rootfs/dev/null c 1 3
+mknod -m 660 /mnt/rootfs/dev/zero c 1 5
+```
+
+> Check all the [Linux device list here](https://www.kernel.org/doc/html/latest/admin-guide/devices.html)
+{: .prompt-info }
+
+Another way to do that is copying devices files from your existing hard disk directory.
+
+```bash
+cp -dpR /dev/fd[01]* /mnt/rootfs/dev
+cp -dpR /dev/tty[0-6] /mnt/rootfs/dev
+```
+
+##### 2.2.2.2. /etc directory
+
+This should contain depends on what programs you intent to run. On most disk-based rootfs, we have three sets of files:
+
+- MUST HAVE files for boot/root system:
+  - `rc.d/*` - system startup and run level change scripts. The standard location may depends on your `init` program.
+  - `fstab` - list of file systems to be mounted.
+  - `inittab` - parameters for the `init` process.
+- SHOULD HAVE files for boot/root system:
+  - `passwd` - list of users, home directories, etc. Should contain at least `root` user.
+  - `group` - user groups.
+  - `shadow` - passwords of users.
+- All the rest is nice to have.
+
+##### 2.2.2.3. /bin and /sbin directories
+
+The `/bin` directory is a convenient place for extra utilities you need to perform basic operations, utilities such as `lv`, `mv`, `cat` and `dd`. You simply copy these utilities from outside.
+
+To get the utilities, a simple way to using common tools, `busybox` is one of the best choice for getting these utilities. Go to the section **Common tools: Busybox** for more detail.
+
+##### 2.2.2.4. /lib directory
+
+##### 2.2.2.5. Modules
+
+##### 2.2.2.6. init program
 
 ## 3. Common tools
 
@@ -429,5 +491,4 @@ mount -t sysfs none /sys
 mount -t proc none /proc
 EOF
 chmod -R 777 etc/init.d/rcS
-find . -print0 | cpio --null -ov --format=newc | gzip -9 > ../rootfs.cpio.gz
 ```
