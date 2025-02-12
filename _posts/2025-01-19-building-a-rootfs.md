@@ -447,7 +447,24 @@ To get the utilities, a simple way to using common tools, `busybox` is one of th
 
 ##### 2.2.2.4. /lib directory
 
-##### 2.2.2.5. Modules
+The `/lib` and `/lib<arch>` you place necessary shared libraries and loaders. Otherwise some programs or system cannot boot due to lack of shared libraries. Nearly every program requires at least the `libc` library.
+
+In `/lib` you must also include a loader for the libraries. The loader will be either `ld.so` (for A.OUT libraries, that is not common now) or `ld-linux.so` (ELF libraries). You can check shared library dependencies with `ldd` command, that also shows the needed loader. For example, the `libc.so` requires ELF loader and also the `vdso` library:
+
+```bash
+$ ldd /lib/x86_64-linux-gnu/libc.so.6
+    /lib64/ld-linux-x86-64.so.2 (0x00007f88f33a1000)
+    linux-vdso.so.1 (0x00007fff16943000)
+```
+
+Some chip vendors are providing compiling toolchains to compile programs that run on their architecture. The toolchain might include libraries and library loaders. For example, if you are building the rootfs for Aarch64 platform, ARM provide libraries in their GNU toolchains, let's say `aarch64-none-linux-gnu` 14.2. You can take the libraries and their loader onto your rootfs:
+
+```bash
+cp <toolchain_path>/aarch64-none-linux-gnu/libc/lib64/libc.so.6 lib64/
+cp <toolchain_path>/arch64-none-linux-gnu/libc/lib/ld-linux-aarch64.so.1 lib/
+```
+
+Kernel modules are placed in `lib/modules` folder, if you include them, remember to to include `insmod`, `rmmod`, and `lsmod` commands also. If you want to load these modules automatically, you might also include `modprobe`, `depmod` and `swapout`. Remember to check shared library dependencies of these and place them onto rootfs also.
 
 ##### 2.2.2.6. init program
 
