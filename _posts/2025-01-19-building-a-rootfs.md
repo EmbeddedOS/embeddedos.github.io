@@ -304,7 +304,7 @@ Building such a rootfs require a spare device that is large enough to hold all t
 
 ##### 2.2.1.1. Using the RAM disk block device with Linux
 
-The RAM disk driver is a way to use main system memory as a block device. It is required for `initrd`, and initial file system used if you need to load modules in order to access the rootfs, I have a full blog about the `initrd` here, take a look [initrd.](/posts/understand-initrd/). It can also be used for a temporary filesystem, since the contents are erased on reboot.
+The RAM disk driver is a way to use main system memory as a block device. It is required for `initrd`, and initial file system used if you need to load modules in order to access the rootfs, I have a full blog about the `initrd` here, take a look [initrd](/posts/understand-initrd/). It can also be used for a temporary filesystem, since the contents are erased on reboot.
 
 Make sure we have the ramdisk device node first:
 
@@ -468,6 +468,12 @@ Kernel modules are placed in `lib/modules` folder, if you include them, remember
 
 ##### 2.2.2.6. init program
 
+First thing first, after populating the rootfs, the kernel will looking for `/init` program and execute it. You can overwrite what kernel exec first by pass the parameter `init=/sbin/init` or `init=/linuxrc`, etc. I have written other blog here to talk more detail about how kernel run the `init` program. [initrd](/posts/understand-initrd/).
+
+There are a lot of `init` implementations, in Unix-like systems, for example, The `init` runs the initialization shell script located at `/etc/rc.d` or `/etc/init.d/` (the standard name depends on your distribution that provides the `init` program, but have the same purpose). And then launches `getty` on terminals under the control `/etc/ttys`. Whereas in the System-V, Systemd styles, are more complexer, they are running daemons with a lot of features: service manager, run-level, etc. While simple implementations with small size, are normally implemented in a `initrd` image. Complexer implementations are implemented in final rootfs image to manage many different type of programs.
+
+If you want to see how to build simple one, take a look to the **Common tools: Busybox** section.
+
 ## 3. Common tools
 
 ### 3.1. Busybox
@@ -481,31 +487,52 @@ By providing everything, but in only one binary, this can keeps the user-land to
 
 #### 3.1.1. Populating a rootfs with Busybox
 
-Building a busybox image is quite similar to building the kernel:
+Building a busybox image is quite similar to building the kernel, you specify the `ARCH`, `CROSS_COMPILE`, make the config, build, and install it.
 
 ```bash
+# Download.
+wget https://busybox.net/downloads/busybox-1.36.1.tar.bz2
+tar -xvf busybox-1.36.1.tar.bz2
+cd busybox-1.36.1
 
+# Make config.
+make -j4 ARCH=arm CROSS_COMPILE=../toolchain/bin/aarch64-none-linux-gnu- defconfig
+make -j4 ARCH=arm CROSS_COMPILE=../toolchain/bin/aarch64-none-linux-gnu- menuconfig
+
+# Build.
+make -j4 ARCH=arm CROSS_COMPILE=../toolchain/bin/aarch64-none-linux-gnu-
+
+# Install.
+make -j4 ARCH=arm CROSS_COMPILE=../toolchain/bin/aarch64-none-linux-gnu- install
 ```
 
-<https://tldp.org/HOWTO/Bootdisk-HOWTO/buildroot.html>
-
-Building a simple rootfs with busybox
+After installing, the `Busybox` install utilities in `_install/` folder, now we just simply bring them onto our rootfs.
 
 ```bash
-cd busybox/
-make -j4 ARCH=arm64 CROSS_COMPILE=../toolchain/bin/aarch64-none-linux-gnu- defconfig
-make -j4 ARCH=arm64 CROSS_COMPILE=../toolchain/bin/aarch64-none-linux-gnu- menuconfig
-make -j4 ARCH=arm64 CROSS_COMPILE=../toolchain/bin/aarch64-none-linux-gnu-
-make -j4 ARCH=arm64 CROSS_COMPILE=../toolchain/bin/aarch64-none-linux-gnu- install
-cd ../
-mkdir -p rootfs/{bin,sbin,etc,proc,sys,usr/{bin,sbin}}
-cp -av busybox/_install/* rootfs/
-cd rootfs
-ln -sf bin/busybox init
-mkdir -p etc/init.d/
-cat > etc/init.d/rcS << EOF
+cp -av busybox/_install/* /mnt/rootfs/
+```
+
+The `Busybox` also include the `init` program, with the binary. We just link `/bin/busybox` into `/init`, `Busybox` will know it now have to act like an `init` program.
+
+```bash
+ln -sf /mnt/rootfs/bin/busybox /mnt/rootfs/init
+```
+
+The `init` program now will looking for shell scripts in `/etc/init.d/` to run. Let's say in our case, we want to mount `/sys` and `/proc`.
+
+```bash
+mkdir -p /mnt/rootfs/etc/init.d/
+cat > /mnt/rootfs/etc/init.d/rcS << EOF
 mount -t sysfs none /sys
 mount -t proc none /proc
 EOF
-chmod -R 777 etc/init.d/rcS
+chmod -R 777 /mnt/rootfs/etc/init.d/rcS
 ```
+
+### 3.2. Buildroot
+
+TODO.
+
+### 3.3. Yocto - OpenEmbedded
+
+TODO.
