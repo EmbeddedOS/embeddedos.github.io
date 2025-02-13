@@ -515,7 +515,9 @@ cp -av busybox/_install/* /mnt/rootfs/
 The `Busybox` also include the `init` program, with the binary. We just link `/bin/busybox` into `/init`, `Busybox` will know it now have to act like an `init` program.
 
 ```bash
-ln -sf /mnt/rootfs/bin/busybox /mnt/rootfs/init
+cd /mnt/rootfs/
+ln -sf bin/busybox init
+cd -
 ```
 
 The `init` program now will looking for shell scripts in `/etc/init.d/` to run. Let's say in our case, we want to mount `/sys` and `/proc`.
@@ -528,6 +530,8 @@ mount -t proc none /proc
 EOF
 chmod -R 777 /mnt/rootfs/etc/init.d/rcS
 ```
+
+To build full Linux system for AArch64 that use `busybox` to build utilities, check out this repo: [Github](https://github.com/EmbeddedOS/arm_build_linux_system)
 
 ### 3.2. Buildroot
 
