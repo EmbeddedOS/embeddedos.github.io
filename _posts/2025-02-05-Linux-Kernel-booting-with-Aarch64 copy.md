@@ -9,7 +9,7 @@ categories: [Kernel, AArch64]
 tags: [Kernel, Booting, AArch64]
 image:
   path: assets/img/aarch64_kernel_booting.png
-  alt: .
+  alt: aarch64_kernel_booting.
 ---
 
 ## 1. AArch64
