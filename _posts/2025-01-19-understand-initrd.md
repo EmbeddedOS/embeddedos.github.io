@@ -166,7 +166,7 @@ static int __ref kernel_init(void *unused)
 }
 ```
 
-The `Arch` kernel boot code run first, and then jump to `start_kernel()` that initialize stuffs, do mount the initrd image, and then run the first user mode thread `kernel_init()`. This function will try to run the `init` program in current rootfs. Start by trying to run `ramdisk_execute_command` program, and then `/sbin/init`, `/etc/init` and so on. To dive deeper into the kernel boot process on AArch64, visit this blog [minimal rootfs](/posts/Linux-Kernel-booting-with-Aarch64/)
+The `Arch` kernel boot code run first, and then jump to `start_kernel()` that initialize stuffs, do mount the initrd image, and then run the first user mode thread `kernel_init()`. This function will try to run the `init` program in current rootfs. Start by trying to run `ramdisk_execute_command` program, and then `/sbin/init`, `/etc/init` and so on. To dive deeper into the kernel boot process on AArch64, visit this blog [Kernel booting with AArch64](/posts/Linux-Kernel-booting-with-Aarch64/)
 
 > The `ramdisk_execute_command` variable have the default value as `/init`, the user can replace this variable's value by passing kernel parameters `initrd=<path>`. In case `noinitrd` is passed to kernel parameters, this value will be `NULL`. As a result `/sbin/init` will be tried first.
 {: .prompt-info }
