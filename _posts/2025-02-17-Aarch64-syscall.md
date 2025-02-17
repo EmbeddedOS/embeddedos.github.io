@@ -79,8 +79,12 @@ EL3 | Firmware/Secure Monitor |
 
 The point is, who run first will have the permission to decide which one run on which level 😛. With higher privilege, that means you have higher permission to access more memory and processor resources.
 
-### 2.1. Exception generating instructions
+### 2.2. Exception generating instructions
 
 There are instructions that intentionally cause an exception to be generated and taken. These instructions are used to implement *system call interfaces* to allow less privileged software to request services from more privileged software.
 
 ![Service call routing](assets/img/service_call_routing.png)
+
+- The Supervisor Call (`svc`) instruction enables a user program at EL0 to request an OS service at EL1.
+- The Hypervisor Call (`hvc`) instruction, enables the OS to request hypervisor services at EL2 (available of the Virtualization Extensions are implemented).
+- The Secure Monitor Call (`smc`) instruction, enables the Normal world to request Secure word services from firmware at EL3 (available of the Security Extensions are implemented).
