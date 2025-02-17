@@ -1,0 +1,62 @@
+---
+title: "Inside Linux System Calls: AArch64 Implementation Explained"
+description: >-
+  Deep dive into Linux System Call Implementation on Aarch64.
+
+author: Cong
+date: 2025-02-16 00:01:00 +0800
+categories: [Kernel, system calls]
+tags: [Kernel, system calls]
+image:
+  path: assets/img/aarch64_kernel_booting.png
+  alt: aarch64 system calls.
+---
+
+## 1. Overview
+
+### 1.1. System Calls
+
+In any OS, the kernel provides a set of interfaces by which processes running in userspace can interact with the system. These interfaces are called as system calls. There are three primary purposes of system calls:
+
+- Provide an abstracted hardware for userspace. For example, when accessing a file, apps are not concerned with the type of file system on which the file resides.
+- Ensure system calls ensure system security and stability. The kernel acts as a *middle man* between system resources and userspace, the kernel can arbitrate access based on permissions, users, and so on.
+- A single common later between user-space and the rest of the system allows for the virtualized system provided to processes.
+
+Without system calls, apps were free to access system resources, it would be nearly impossible to implement multitasking, virtual memory, and so more benefit features, stability and security. In Linux, system calls are the only means userspace has of interfacing with the kernel, they are the only *legal entry point* into the kernel other than exceptions and traps.
+
+## 1.2. The system call handler
+
+The userspace cannot execute kernel code directly, instead, the userspace must some how *signal* to the kernel that they want to execute a system call. The mechanism to signal the kernel is **a software interrupt**: Raise an exception, and the system will switch to kernel mode, and execute the exception handler. The exception handler handler, in this case, is actually the **system call handler**.
+
+Specific system calls handler are generic for all architecture. Whereas, the *system call handler* is arch-dependent code, that is because, each architecture have its own way to handle exception, switch operation modes, registers to save and restore context, etc.
+
+## 1.3. System calls number
+
+Each system call is assigned a *syscall number*. This is unique number that is used to reference a specific system call. The system call handler using this number to dispatch to a corresponding system call.
+
+### 1.4. System calls implementation on x86
+
+The implementation on x86 are getting as examples for so many documents and resources. That is because the x86 is so popular and the implementation is quite clear to understand. Let's summarize, the x86 are using a well-known interrupt number (Normally `0x80`) to handle system call. The application makes a system call by issuing an software interrupt, the system call number and other parameters are passed via well-known registers (`EAX` register store system call number, while parameters in registers `EBX`, `ECX`, `EDX`, `ESI`, `EDI`, `EBP`).
+
+The kernel and then handle this interrupt as a dispatcher, based on the system call number and select the corresponding system call handler. The result is also returned to well-known registers.
+
+In this blog, we will focus on how system calls are implemented on AArch64.
+
+## 2. Aarch64 exception levels
+
+The name for privilege in Aarch64 is Exception level, shortly, EL. The ELs are numbered, `EL<x>` with `x` between 0 and 3. The higher level of privilege the higher number.
+
+The architecture does not specify what software uses which EL. But, a common implementation like this:
+
+```text
+ELO |        Application      |
+EL1 |          Rich OS        |
+EL2 |         Hypervisor      |
+EL3 | Firmware/Secure Monitor |
+```
+
+The point is, who run first will have the permission to decide which one run on which level 😛. With higher privilege, that means you have higher permission to access more registers and resources.
+
+### 2.1. Exception types
+
+### 2.1. Exception handler
