@@ -10,6 +10,7 @@ tags: [AArch64, exception models]
 image:
   path: assets/img/service_call_routing.png
   alt: aarch64 exception levels.
+published: false
 ---
 
 Targets:

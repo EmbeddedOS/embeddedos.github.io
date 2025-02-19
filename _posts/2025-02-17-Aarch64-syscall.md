@@ -10,6 +10,7 @@ tags: [Kernel, system calls]
 image:
   path: assets/img/aarch64_kernel_booting.png
   alt: aarch64 system calls.
+published: false
 ---
 
 ## 1. Overview
