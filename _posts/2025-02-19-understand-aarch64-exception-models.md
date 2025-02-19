@@ -12,16 +12,14 @@ image:
   alt: aarch64 exception levels.
 ---
 
-Objective:
+Targets:
 
 - Understand exception and privilege model in AArch64.
 - Be able to develop low-level code, such as boot code or kernels, particularly, to manage exceptions.
 
-Requirement:
+Requirements:
 
 - Understand Assembly syntax or willing to learn 😛.
-
-The Exception model is one of the most important thing when learning about any architectures. it allows us to understand how different privilege are managed within the processor.
 
 ## 1. Privilege and Exception levels
 
@@ -35,7 +33,7 @@ The current privilege can only change when processor takes or returns from an ex
 
 The name for privilege in Aarch64 is Exception level, shortly, EL. The ELs are numbered, `EL<x>` with `x` between 0 and 3. The higher level of privilege the higher number.
 
-The architecture does not specify what software uses which EL, and not all levels are required. Some hardware can implement EL3, EL2, EL0 and without EL2 Or implement only EL0 and EL1. That make the architecture become more popular with the big range of applications. Here is a common implementation:
+The architecture does not specify what software uses which EL, and not all levels are required. EL0 and EL1 are mandatory, whereas EL2 and EL3 are optional. This makes the architecture become more popular with the big range of applications. Here is a common implementation:
 
 ```text
 ELO |       Application       |
@@ -66,8 +64,29 @@ The MMU configuration is stored in System registers, current EL also decide you 
 
 In AArch64, there are 2 categories of register:
 
-- General registers: Instruction processing.
-- System registers: System control and status reporting.
+- General registers that are used instruction processing.
+- System registers that are used to configure the processor and control systems like MMU and exception handling.
+
+The General registers are able to access from all ELs, meanwhile, the system registers require privilege to access.
+
+The system registers names end with `_ELx`. The `_ELx` suffix specifies the minimum privilege necessary to access the register. For example, `VBAR_EL1`, the vector base address register, needs at least EL1 privilege to access the register.
+
+There are many system registers with similar functions that have names that differ only by their Exception level suffix. They are independent registers. For example, there is a system control register `SCTLR` for each EL, each register control the arch features for that EL: `SCTLR_EL1`, `SCTLR_EL2`, and `SCTLR_EL3`.
+
+Higher Exception levels have the privilege to access registers that control low levels. We normally don't do that, however, sometimes we do access that for special features, for examples, virtualization, context switching, etc.
+
+There are some special system registers when handling exceptions:
+
+- `ELR_ELx`: Exception Link Register, holds the address of the instruction which caused the exception.
+- `ESR_ELx`: Exception Syndrome Register, the reasons for the exception.
+- `FAR_ELx`: Fault Address Register, holds the virtual faulting address.
+- `HCR_ELx`: Hypervisor Configuration Register, controls virtualization settings and trapping of exceptions to EL2.
+- `SCR_ELx`: Secure Configuration Register, controls secure state and trapping of exceptions to EL3.
+- `SCTLR_ELx`: System Control Register, controls standard memory, system facilities, report functions's status.
+- `SPSR_ELx`: Saved Program Status Register, holds the saved processor state when an exception is taken to this ELx.
+- `VBAR_ELx`: Vector Base Address Register, holds the exception base address for any exception that is taken to ELx.
+
+## 2. Exception types
 
 The exception model in AArch64 is a complicated topic, we only discuss basic things in here, first thing first, the concept. *Exceptions are conditions or system events* that usually require remedial action or an update of system status by privileged software to ensure smooth functioning of the system. Therefore, they can cause the currently executing program to be suspended.
 
