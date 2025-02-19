@@ -106,6 +106,13 @@ There are instructions that intentionally cause an synchronous exception to be g
 
 ## 3. Procedure Call Standard for AArch64
 
+AAPCS64 defines how subroutines can be separately written, separately compiled, and separately assembled to work together. it describes a contract between a calling routine and a called routine, or between a routine and its execution environment, that defines:
+
+- Obligations on the caller to create a program state in which the called routine may start to execute.
+- Obligations on the called routine to preserve the program state of the caller across the call.
+- The rights of the called routine to alter the program state of its caller.
+- Obligations on all routines to preserve certain global invariants.
+
 ## 4. System call implementation
 
 As we discussed in the previous sections, in Aarch64, the Linux kernel system calls are implemented based on the concept of exceptions. The user program that run at EL0, use `svc` instruction call to request an OS service at EL1. The kernel handles the request as the same way it handles a sync exception:
@@ -117,6 +124,8 @@ As we discussed in the previous sections, in Aarch64, the Linux kernel system ca
 There is no different in steps, the main logic is centralized on exception handler, where the kernel do dispatch the system call, parsing parameter, do the specific task, and make result to user space. In this section, we will take a top-down approach, to see what happen from user request until kernel return.
 
 ### 4.1. Userspace trigger a request
+
+User 
 
 ### 4.2. Arch code handle the system call
 
