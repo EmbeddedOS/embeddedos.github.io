@@ -77,3 +77,5 @@ The PE/COFF image might look like this:
 - <https://users.informatik.haw-hamburg.de/~krabat/FH-Labor/gnupro/5_GNUPro_Utilities/c_Using_LD/ldLinker_scripts.html>
 - <https://github1s.com/krinkinmu/aarch64/blob/master/bootstrap/Makefile>
 - <https://refspecs.linuxbase.org/elf/gabi4+/ch4.sheader.html>
+- <https://stackoverflow.com/questions/30981153/what-is-the-file-type-of-a-kernel-linux-kernel-for-example>
+- <https://stackoverflow.com/questions/68549538/why-does-the-linux-kernel-raw-binary-image-has-the-windows-executable-format>
