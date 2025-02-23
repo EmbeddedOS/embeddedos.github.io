@@ -55,17 +55,25 @@ There are some special sections do special jobs. For example, `SHT_DYNAMIC` sect
 
 ### 1.3. PE
 
+Similar with ELF, Portable Executable (PE) is an executable file format. But instead of using on Unix-like OS, PE is used mostly on Windows. The PE don't have the program header table, instead, all the information is described in section header table. The loader based on that to bring sections onto memory.
+
+Unlike the ELF format that puts ELF header at the beginning, the PE format put the PE header address at the offset `0x3C`.
+
+The PE format is also the accepted standard for executables in EFI environment according to the EFI specification.
+
+#### 1.3.1. Microsoft PE/COFF
+
+Common Object File Format (COFF), is used for storing compiled code, such as outputted by a compiler or a linker. It is not necessary to be an executable, the COFF file can be used to store individual functions or symbols, fragments of programs, libraries or entire executables.
+
+The Microsoft PE Executable format (PE/COFF) contains a version of COFF. Normally, the COFF file puts the COFF header at the beginning. But in case of PE/COFF, if the file is an executable, COFF header is not placed at the beginning. PE/COFF image contains a pointer at offset `0x3C` which points to the PE header, and the COFF header immediately follows this PE signature.
+
+The PE/COFF image might look like this:
+
+![PE/COFF file layout](assets/img/pe_coff_file_format.png)
+
 ## 2. Linux kernel image formats
 
 - <https://stackoverflow.com/questions/74325349/exact-difference-between-image-and-vmlinux>
 - <https://users.informatik.haw-hamburg.de/~krabat/FH-Labor/gnupro/5_GNUPro_Utilities/c_Using_LD/ldLinker_scripts.html>
 - <https://github1s.com/krinkinmu/aarch64/blob/master/bootstrap/Makefile>
 - <https://refspecs.linuxbase.org/elf/gabi4+/ch4.sheader.html>
-
-## 3. Loading executable files
-
-### 3.1. Bare metal programs
-
-### 3.2. User programs in OS environment
-
-### 3.3. Bootloader
