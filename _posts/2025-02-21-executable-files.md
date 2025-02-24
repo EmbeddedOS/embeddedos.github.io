@@ -92,7 +92,7 @@ Even in binary format, the image still need to provide some basic information so
 
 Now let's go through popular architectures to see how they implement their image format.
 
-> For most architecture, the Kernel build system output an ELF file `vmlinux`, that is able to boot, but contains all information (binary, debugging, symbol table, etc.). Using this file, each architecture can produce various kind of Bootable Images.
+> For most architecture, the Kernel build system output an ELF file `vmlinux`, that is not able to boot, but contains all information (binary, debugging, symbol table, etc.). By using this kernel proper file, each architecture can produce various kind of kernel images.
 {: .prompt-info }
 
 ![kernel image format](assets/img/kernel_image_format.png)
