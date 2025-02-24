@@ -73,9 +73,130 @@ The PE/COFF image might look like this:
 
 ## 2. Linux kernel image formats
 
-- <https://stackoverflow.com/questions/74325349/exact-difference-between-image-and-vmlinux>
-- <https://users.informatik.haw-hamburg.de/~krabat/FH-Labor/gnupro/5_GNUPro_Utilities/c_Using_LD/ldLinker_scripts.html>
+Linux kernel image might have different format for each architecture. The format, normally, is just a binary image containing machine code for the target architecture. It's kind of statically linked executable, once loaded onto the memory, it should be able to execute without any helper. This is because the is no OS running before the kernel to check and link dependencies. Once the kernel running, it can load other modules itself.
+
+The bootloader (any software that runs before kernel) is not supposed to do complex tasks. Depending on the architecture, they can do more specific tasks, but the main tasks should be:
+
+1. Setup and initialize memory.
+2. Load the kernel image into memory.
+3. Call the kernel image.
+
+Other steps like setup device tree, load initrd, decompress a compressed kernel image, etc. might be optional and not mandatory for all bootloader implementation.
+
+Once the kernel running, it can load whatever needed by itself.
+
+Even in binary format, the image still need to provide some basic information so that the bootloader can do its job. The information at least include:
+
+- Kernel entry point.
+- Image load offset.
+- Magic number to determine.
+
+Now let's go through popular architectures to see how they implement their image format.
+
+### 2.1. AArch64
+
+The decompressed kernel image contains a 64-byte header as follows:
+
+![AArch64 kernel image layout](assets/img/aarch64_kernel_image_layout.png)
+
+The bootloader, for instance, UBoot parses these header to load the kernel into memory, and jump to kernel entry point. UBoot only checks for `magic` and uses `text_offset`, `image_size`, `flags` to load the image and jump to kernel. Other fields might be ignored.
+
+```c
+#define LINUX_ARM64_IMAGE_MAGIC 0x644d5241
+
+struct Image_header {
+    uint32_t    code0;        /* Executable code */
+    uint32_t    code1;        /* Executable code */
+    uint64_t    text_offset;  /* Image load offset, LE */
+    uint64_t    image_size;   /* Effective Image size, LE */
+    uint64_t    flags;        /* Kernel flags, LE */
+    uint64_t    res2;         /* reserved */
+    uint64_t    res3;         /* reserved */
+    uint64_t    res4;         /* reserved */
+    uint32_t    magic;        /* Magic number */
+    uint32_t    res5;
+};
+
+int booti_setup(ulong image, ulong *relocated_addr, ulong *size,
+                bool force_reloc)
+{
+    struct Image_header *ih;
+    uint64_t dst;
+    uint64_t image_size, text_offset;
+
+    *relocated_addr = image;
+
+    ih = (struct Image_header *)map_sysmem(image, 0);
+
+    if (ih->magic != le32_to_cpu(LINUX_ARM64_IMAGE_MAGIC)) {
+        puts("Bad Linux ARM64 Image magic!\n");
+        return 1;
+    }
+
+    /*
+     * Prior to Linux commit a2c1d73b94ed, the text_offset field
+     * is of unknown endianness.  In these cases, the image_size
+     * field is zero, and we can assume a fixed value of 0x80000.
+     */
+    if (ih->image_size == 0) {
+        puts("Image lacks image_size field, assuming 16MiB\n");
+        image_size = 16 << 20;
+        text_offset = 0x80000;
+    } else {
+        image_size = le64_to_cpu(ih->image_size);
+        text_offset = le64_to_cpu(ih->text_offset);
+    }
+
+    *size = image_size;
+
+    /*
+     * If bit 3 of the flags field is set, the 2MB aligned base of the
+     * kernel image can be anywhere in physical memory, so respect
+     * images->ep.  Otherwise, relocate the image to the base of RAM
+     * since memory below it is not accessible via the linear mapping.
+     */
+    if (!force_reloc && (le64_to_cpu(ih->flags) & BIT(3)))
+        dst = image - text_offset;
+    else
+        dst = gd->bd->bi_dram[0].start;
+
+    *relocated_addr = ALIGN(dst, SZ_2M) + text_offset;
+
+    unmap_sysmem(ih);
+
+    return 0;
+}
+```
+
+In case of booting though EFI, for compatibility, the `res5` (at offset `0x3C`) contains the pointer to PE header table, as we discussed before. So this kernel image is a PE/COFF image and bootable in a EFI environment. The full header now might look like that:
+
+![AArch64 PE/COFF](assets/img/aarch64_pe_coff_kernel_image.png)
+
+EFI firmware, instead of using fields in 64-byte header, it can only need the `res5` to jump to PE header start point, using these information to load the kernel, it's the way kernel make the Image more generic.
+
+> To support EFI and PE table, the kernel config `CONFIG_EFI` should be enabled, otherwise kernel will not generate code for the PE header `__EFI_PE_HEADER`.
+{: .prompt-info }
+> After building, the AArch64 Kernel image is placed at `arch/arm64/boot/Image`.
+{: .prompt-info }
+
+#### 2.1.1. Kernel build system
+
+To build various kind of images, the AArch64 Kernel build system output an ELF file `vmlinux`, that is not used to boot, but contains other information (debugging, symbol table, etc.) and is used to build other format images. For example:
+
+- The binary `Image` is taken from `vmlinux` with `objcopy`.
+- The `Image.gz` is `Image` with gzip.
+- The `Image.bz2` is `Image` with bzip2.
+
+### 2.2. AArch32
+
+- <https://en.wikipedia.org/wiki/Vmlinux#bzImage>
+- <https://www.linfo.org/vmlinuz.html>
+
+### 2.3. x86
+
 - <https://github1s.com/krinkinmu/aarch64/blob/master/bootstrap/Makefile>
 - <https://refspecs.linuxbase.org/elf/gabi4+/ch4.sheader.html>
 - <https://stackoverflow.com/questions/30981153/what-is-the-file-type-of-a-kernel-linux-kernel-for-example>
 - <https://stackoverflow.com/questions/68549538/why-does-the-linux-kernel-raw-binary-image-has-the-windows-executable-format>
+- <https://stackoverflow.com/questions/35691830/arm64-image-to-zimage-or-boot-img>
+- <https://stackoverflow.com/questions/22322304/image-vs-zimage-vs-uimage>
