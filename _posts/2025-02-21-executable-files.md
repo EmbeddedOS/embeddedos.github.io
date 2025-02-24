@@ -50,7 +50,7 @@ There are some special sections do special jobs. For example, `SHT_DYNAMIC` sect
 3. Load dynamic linking programs, shared libraries if required (in `SHT_DYNAMIC`section).
 4. Pass the CPU control at the entry point `e_entry` to start the program.
 
-![ELF Loader load segments](assets/img/elf_file_layout.png)
+![ELF Loader load segments](assets/img/elf_loader_load_segment.png)
 
 ### 1.3. PE
 
