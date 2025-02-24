@@ -1,16 +1,15 @@
 ---
-title: "Executable files"
+title: "Understand the Linux Kernel Image formats"
 description: >-
-  Understand executable formats and how they are executed in various platforms.
+  Understand the executable file and Linux Kernel Image formats in various platforms.
 
 author: Cong
 date: 2025-02-21 00:01:00 +0800
 categories: [Compiling]
-tags: [executable, linux, bare metal]
+tags: [executable, linux, kernel, image]
 image:
-  path: assets/img/service_call_routing.png
-  alt: aarch64 exception levels.
-published: false
+  path: assets/img/kernel_image_format.png
+  alt: Linux Kernel Image format.
 ---
 
 Targets:
@@ -92,6 +91,11 @@ Even in binary format, the image still need to provide some basic information so
 - Magic number to determine.
 
 Now let's go through popular architectures to see how they implement their image format.
+
+> For most architecture, the Kernel build system output an ELF file `vmlinux`, that is able to boot, but contains all information (binary, debugging, symbol table, etc.). Using this file, each architecture can produce various kind of Bootable Images.
+{: .prompt-info }
+
+![kernel image format](assets/img/kernel_image_format.png)
 
 ### 2.1. AArch64
 
@@ -179,24 +183,33 @@ EFI firmware, instead of using fields in 64-byte header, it can only need the `r
 > After building, the AArch64 Kernel image is placed at `arch/arm64/boot/Image`.
 {: .prompt-info }
 
-#### 2.1.1. Kernel build system
+#### 2.1.1. Bootable image formats
 
-To build various kind of images, the AArch64 Kernel build system output an ELF file `vmlinux`, that is not used to boot, but contains other information (debugging, symbol table, etc.) and is used to build other format images. For example:
+- `Image` - Uncompressed kernel image that is taken from `vmlinux` with `objcopy`.
+- `Image.gz` - `Image` with gzip. The bootloader might have to include a decompressor to extract this image. If the decompressor is not available, `Image` might be better choice.
+- `image.fit` - The Flat Image Tree, that is used mostly by UBoot, is where all binaries (Device Tree, kernel image, initrd) are combined into one.
 
-- The binary `Image` is taken from `vmlinux` with `objcopy`.
-- The `Image.gz` is `Image` with gzip.
-- The `Image.bz2` is `Image` with bzip2.
+> To check all output formats supported by the Linux kernel for your architecture, run: `make ARCH=<your_arch> help` And take a look to the `Architecture-specific targets (<your_arch>)` section.
+{: .prompt-info }
 
 ### 2.2. AArch32
 
-- <https://en.wikipedia.org/wiki/Vmlinux#bzImage>
-- <https://www.linfo.org/vmlinuz.html>
+AArch32 bootable image formats:
+
+- `Image` - Uncompressed kernel image that is taken from `vmlinux` with `objcopy`.
+- `zImage` - Compressed kernel image. Despite this image is compressed, but it's a self-extracting image. That means, the bootloader don't have to decompress itself. The kernel, after take control, will decompress automatically.
+- `uImage` - UBoot wrapped `zImage`. This image is made from an UBoot utilities also known as `mkimage`.
+- `xipImage` - XIP Kernel image.
+- `bootpImage` - Combined zImage and initial RAM disk.
+
+> The self-extracting image is a image that has special headers that contain decompression code. The bootloader read the image header to understand the compression method and decompression instructions. The bootloader then executes the decompression code which will decompress kernel directly into memory.
+{: .prompt-info }
 
 ### 2.3. x86
 
-- <https://github1s.com/krinkinmu/aarch64/blob/master/bootstrap/Makefile>
-- <https://refspecs.linuxbase.org/elf/gabi4+/ch4.sheader.html>
-- <https://stackoverflow.com/questions/30981153/what-is-the-file-type-of-a-kernel-linux-kernel-for-example>
-- <https://stackoverflow.com/questions/68549538/why-does-the-linux-kernel-raw-binary-image-has-the-windows-executable-format>
-- <https://stackoverflow.com/questions/35691830/arm64-image-to-zimage-or-boot-img>
-- <https://stackoverflow.com/questions/22322304/image-vs-zimage-vs-uimage>
+- `bzImage` - Compressed kernel image, sometimes it is renamed as a `vmlinuz`. This image is also a self-extracting image.
+- `fdimage` - 1.4MB boot floppy image.
+- `fdimage144` - 1.4MB boot floppy image.
+- `fdimage288` - 2.8MB boot floppy image.
+- `hdimage` - Create a BIOS/EFI hard disk image.
+- `isoimage` - Create a boot CD-ROM image.
