@@ -1,5 +1,5 @@
 ---
-title: "GNU utilities: Linker and Assembler."
+title: "GNU core utilities: Linker and Assembler."
 description: >-
   Understand GNU utilities linker and assembler basic concepts.
 
@@ -8,9 +8,9 @@ date: 2025-02-25 00:01:00 +0800
 categories: [Compiling]
 tags: [linker, arm, assembler, assembly, gnu]
 image:
-  path: assets/img/kernel_image_format.png
-  alt: Linux Kernel Image format.
-published: false
+  path: assets/img/gnu_coreutils.png
+  alt: GNU core utils.
+published: true
 ---
 
 It's so important to understand the GNU utilities and toolchains in Embedded System. While the assembler allows us to write the assembly code and compile to machine code, the linker gives us the ability to link objects to become the final executable image. This blog's targets will be:
