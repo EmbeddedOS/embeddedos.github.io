@@ -10,7 +10,7 @@ tags: [linker, arm, assembler, assembly, gnu]
 image:
   path: assets/img/gnu_coreutils.png
   alt: GNU core utils.
-published: true
+published: false
 ---
 
 It's so important to understand the GNU utilities and toolchains in Embedded System. While the assembler allows us to write the assembly code and compile to machine code, the linker gives us the ability to link objects to become the final executable image. This blog's targets will be:
@@ -69,21 +69,101 @@ An assembly program include 4 basic elements:
 
 The GNU assembler supports a relatively large set of directives, that are used in a generic way for all supported architecture. Let's discover some of most commonly used directives.
 
-Every directive start with `.` character.
+> Every directive start with `.` character.
+{: .prompt-info }
 
 #### 1.2.1. Selecting sections
 
-Every instructions, data, comments are stored in *sections*. There are some standard sections the programmer **CAN** choose to put code or data in. Standard sections are mainly used:
+Every instructions, data, comments are stored in *sections*. There are some standard sections the programmer **CAN** choose to put code or data in. Sections also can be divided into numbered subsections.
+
+- `.<section>` -- to select a section.
+- `.section <name>`  -- create a new section.
+- `.<section> subsection` -- Create a new subsection.
+
+```asm
+.section my_section         @ Create my_section.
+/* Put code and/or data. */
+
+.text my_text_subsection    @ Create my_text_subsection under text section.
+/* Put code and/or data. */
+```
+
+Once a section has been selected, all of the instructions and/or data will go into that section until another section is selected.
 
 #### 1.2.2. Allocating space
 
+The assembler supports bytes, integer types, floating point types, and strings. There are several directives to allocate a fixed amount of space in memory. The syntax to allocate like this `.<type> expressions`
+
+```asm
+.data                           @ select `data` section.
+i:      .word   0               @ make a label `i` that point to a memory space that enough for int.
+str:    .asciz  "Hello\n"       @ String.
+arr:    .word   0,1,2,3         @ Array of integer.
+```
+
+This program might look like this in C:
+
+```c
+static int i = 0;
+static char str[] = "Hello\n";
+static int arr[] = {0, 1, 2, 3};
+```
+
 #### 1.2.3. Filling and aligning
+
+On almost CPU architecture, data can be moved to and from 1 or 2 or 4 bytes at a time. Moving a word (4 byte) will take significantly more time if the address is not aligned on a 4-byte boundary. That's similar for moving half-word. By that and some other use cases, GNU Assembler provide some directive to align memory on any boundary desired.
+
+`.align abs-expr, abs-expr, abs-expr`
+
+Here is an simple example, that `.align` directive tell the assembler that omits next 2 bytes after `ch`, to make sure access `arr` will be at 4 byte boundary:
+
+```asm
+ch: .byte 'A','B'
+.align 2
+arr: .word 0, 1, 2, 3, 4
+```
+
+`.skip size, fill`
+`.space size, fill`
+
+These directive allocate a large area of memory and fill it with the same value.
 
 #### 1.2.4. Symbol operations
 
 #### 1.2.5. Conditional
 
 #### 1.2.6. Macros
+
+The directives `.macro` and `.endm` allow the programmer to define macros that the assembler expands to generate assembly code. The syntax to define a macro look like this:
+
+`.macro macro_name macro_args ...` -- Define macro called `macro_name`, if the macro requires arguments, their name
+are specified after the name `macro_args ...`. The arguments can also have a default value `macro_args=default_value`. When a macro is called, the argument values can be specified either by position, or by keyword. Let's take a look to this example:
+
+```asm
+.macro SHIFT a,b
+.if \b < 0
+mov \a, \a, asr #-\b
+.else
+mov \a, \a, lsl #\b
+.endm
+```
+
+To refer to the argument, we start with `\`, for example `\a`, `\b`. There is a special variable `\@` that is used by the assembler to maintain a count of how many macros it has executed.
+To end a macro definition, we can use `.endm` macro, or use `.exitm` to exit early.
+
+Calling macro:
+
+```asm
+SHIFT r1, 3
+SHIFT r4, -6
+```
+
+The code will be generated:
+
+```asm
+mov r1, r1, asr #3
+mov r4, r4, lsl #6
+```
 
 #### 1.2.7. Includes
 
