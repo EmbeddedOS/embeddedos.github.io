@@ -173,12 +173,21 @@ mov r4, r4, lsl #6
 
 #### 1.3.2. Branch
 
+- `bl` branch to other instruction, the `LR` will load the address of next instruction after `bl`, using this indicate you will return in the future.
+- `b` branch without return, you just want to jump to other instruction.
+
 ## 2. GNU Linker
 
 The linker combines a number of object and archive files, relocates their data and ties up symbol references. This usually is the last step in compiling a program. Similar as GNU Assembler, GNU Linker is the most popular than other linkers. It covers a broad range of situations, and be as compatible as possible with other linkers.
 
 > The GNU Linker executable is named `ld`. Some architectures name their linker with `-ld` as a suffix. For instance: `aaarch64-none-linux-gnu-ld`.
 {: .prompt-info }
+
+### 1.4. Inline Assembly
+
+```asm
+
+```
 
 ### 2.1. Command line options
 
