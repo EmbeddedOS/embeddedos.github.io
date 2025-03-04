@@ -167,14 +167,11 @@ mov r4, r4, lsl #6
 
 #### 1.2.7. Includes
 
-### 1.3. ARM instruction set
+### 1.3. Inline Assembly
 
-#### 1.3.1. Load/Store
+```asm
 
-#### 1.3.2. Branch
-
-- `bl` branch to other instruction, the `LR` will load the address of next instruction after `bl`, using this indicate you will return in the future.
-- `b` branch without return, you just want to jump to other instruction.
+```
 
 ## 2. GNU Linker
 
@@ -182,12 +179,6 @@ The linker combines a number of object and archive files, relocates their data a
 
 > The GNU Linker executable is named `ld`. Some architectures name their linker with `-ld` as a suffix. For instance: `aaarch64-none-linux-gnu-ld`.
 {: .prompt-info }
-
-### 1.4. Inline Assembly
-
-```asm
-
-```
 
 ### 2.1. Command line options
 
@@ -211,9 +202,11 @@ Some common options:
 
 This script is written in the linker command language. The main purpose of this script is to describe how the sections in the input files should be mapped into the output file, and to control the memory layout of the output file.
 
-## 3. Other utilities
+## 3. GNU Debugger
 
-### 3.1. objcopy
+## 4. Other utilities
+
+### 4.1. objcopy
 
 - <https://ee209-2019-spring.github.io/references/gnu-assembler.pdf>
 - <https://www.eecs.umich.edu/courses/eecs373/readings/Linker.pdf>

@@ -63,3 +63,5 @@ So to access the internet outside (via your host):
 - Configure guest IP: `10.0.2.15`.
 - Configure default gateway to: `10.0.2.2`.
 - Point DNS to: `10.0.2.3`.
+
+## Debugging
