@@ -29,6 +29,8 @@ Storage devices are handled by `--blockdev` which specify how blocks are handled
 
 Using this option means you are trying to emulate the earliest code in your architecture (normally ROM code). The given image normally is in binary format which will get loaded into some flash or ROM memory where the CPU start executing. Because you're try to emulate ROM code, QEMU will try to act like the CPU, pass the first control to you.
 
+In case of u-boot, QEMU load it into ROM (flash memory), the U-Boot after that relocate itself to RAM and jump to it.
+
 ### `kernel` option
 
 Refer to emulating kernel code (mostly Linux kernel). Kernel running means, the bootloader already there, so the QEMU try to load various kernel format like the way bootloader do.
