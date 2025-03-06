@@ -23,11 +23,15 @@ published: false
 ### Stack operation
 
 - Create a stack frame when entering a block code: `sub sp, sp, #16` -- Create a frame with 16 bytes. (enough for 2 64=bit registers).
-- Store to stack frame: `str	x0, [sp, 8]` -- Store x0 to second 64 bit register in stack frame.
+- Store to stack frame: `str x0, [sp, 8]` -- Store x0 to second 64 bit register in stack frame.
 - Load from stack frame: `ldr x0, [sp, 8]` -- Load second 64 bit register into x0.
 - Delete a stack frame when exiting a block code: `add sp, sp, #16` -- Remove a frame with 16 bytes.
 
 ### Operator
+
+- `sub x0, x0, #20` -- sub x0 with 20 and store to x0, the value should be in range 0-4095. If the value is too big, using below commands instead.
+- `sub x1, x1, x2` -- sub x1 to x2 and store to x1.
+- `subs  x1, x1, x2` -- sub x1 to x2 and store to x1. the SUBS instruction updates the N, Z, C and V flags according to the result.
 
 ### Branch
 
