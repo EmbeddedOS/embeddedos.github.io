@@ -16,7 +16,7 @@ Writing bare metal boot code that is running at highest exception level EL3. Cha
 
 ## 2. Hardware platform - QEMU
 
-The platform I choose is QEMU, that make us easy to run, debug and able to access by everyone. The machine (SoC) would be `virt` and the cpu would be `cortex-a57`. Because we are assuming that our application will run as a bare-metal bootloader, the firmware format should be a raw binary image, and should be loaded at a well-known address, that CPU will start at when power up. The QEMU help us to do that by specifying the `-bios <firmware>` option.
+The platform I choose is QEMU, that make us easy to run, debug and able to access by everyone. The machine (SoC) would be `virt` and the cpu would be `cortex-a57`.
 
 The `virt` machine [Memory Layout](https://github.com/qemu/qemu/blob/master/hw/arm/virt.c#L160) might look like this:
 
@@ -39,7 +39,19 @@ The `virt` machine [Memory Layout](https://github.com/qemu/qemu/blob/master/hw/a
 - 256MB..1GB is reserved for possible future PCI support.
 - 1GB and up is RAM.
 
-So the RAM start from `0x40000000`, that is where our boot code will be loaded and PC will start execute from this address (after ROM).
+ Because we are assuming that our application will run as a bare-metal bootloader, the firmware format should be a raw binary image, and should be loaded at a well-known address, that CPU will start at when power up. The QEMU help us to do that by specifying the `-bios <firmware>` option.
+
+After a reset, the CPU start execute at ROM code `0x00000000`, if the `-bios <firmware>` option is used, QEMU assumes that we are running ROM code, and will load the firmware into Flash memory. The firmware, in this case, have to relocate itself into RAM, and do tasks (like the way [UBoot](https://github.com/ARM-software/u-boot/blob/master/arch/arm/lib/relocate_64.S#L22) do).
+
+Another choice is using `-kernel <firmware>` option. Now the QEMU assumes that we are running a kernel, and the bootloader was running before, so it acts like bootloader, loads the firmware directly into RAM and start executing. We can specify our application entry point address in the firmware header, but it should be RAM beginning point, `0x40000000`.
+
+So now we have two choices:
+
+- Write ROM code and relocate our application into RAM.
+- Write kernel code and let the QEMU loads our application into RAM.
+
+> Using `-kernel <firmware>` option also has other advantage is that, QEMU acts like a bootloader and able to parse variety kind of kernel image format, for example ELF, PE, or even Linux Kernel format.
+{: .prompt-info }
 
 ### 2.1. Debugging
 
