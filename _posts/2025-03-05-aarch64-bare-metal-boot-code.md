@@ -166,7 +166,7 @@ Other options like `-D` help you to redirect these item logs into other output, 
 
 Unlike the real hardware, maybe need more steps to setup UART, by using QEMU, we can write directly characters into UART Tx by writing to the Tx register. And the log by default will be redirected into stdout. As we know the UART0 peripheral start at memory address 0x09000000, here is the simple macro that I wrote in Aarch64 Assembly to write character directly to Tx register:
 
-```asm
+```text
 .macro qemu_print reg, len
     sub sp, sp, #24
     str x10, [sp, #0]
@@ -195,7 +195,7 @@ Unlike the real hardware, maybe need more steps to setup UART, by using QEMU, we
 This macro send byte to byte in a loop from the address `addr` with length `len` to the Tx register `0x09000000`. The `ldrb` get the first byte in the address that is hold by `x12`.
 And here is how we use the `qemu_print`:
 
-```asm
+```text
 qemu_print hello_message, hello_message_len
 
 hello_message: .asciz "Aarch64 bare metal code!\n"
@@ -239,7 +239,7 @@ qemu-system-aarch64 -M virt,virtualization=on,secure=on -cpu cortex-a57 -bios bo
 
 When application starts running, first thing we do is check the current EL, in real system, processor will start at EL3, we are using QEMU and able to choose whichever you want, so let's cover all scenarios.
 
-```asm
+```text
 _start:
     /* We don't know current EL yet, so we load a generic stack pointer. */
     ldr x30, =stack_top
