@@ -7,12 +7,20 @@ author: Cong
 date: 2025-03-05 00:01:00 +0800
 categories: [bootloader]
 tags: [aarch64, exception level, bare metal, qemu, gdb]
-published: false
+published: true
 ---
+
+> Full source code now is available on this repo: [AArch64 Boot Code](https://github.com/EmbeddedOS/aarch64_boot_code).
+{: .prompt-info }
 
 ## 1. Objective
 
-Writing bare metal boot code that is running at highest exception level EL3. Change the level step by ste
+- Understand Aarch64 booting flow, exception levels.
+- Using QEMU as a base platform.
+- Firmware can boot from any EL level and able to change Exception Level from EL3 to EL0.
+- Firmware is able to be loaded to ROM and perform self-relocating or loaded to RAM and running directly.
+- Using system call `svc` from EL0 user space to request EL1 Kernel service.
+- Debugging system with GDB.
 
 ## 2. Hardware platform - QEMU
 
@@ -53,6 +61,16 @@ So now we have two choices:
 > Using `-kernel <firmware>` option also has other advantage is that, QEMU acts like a bootloader and able to parse variety kind of kernel image format, for example ELF, PE, or even Linux Kernel format.
 {: .prompt-info }
 
+We will build 2 versions of firmware, `boot.elf` that is in ELF format, and can be run as a kernel. And the second `boot.bin` is ROM boot code version, that has the ability to self-relocate the application into RAM and start executing.
+
+```bash
+# Start from ROM (Flash memory).
+qemu-system-aarch64 -M virt,virtualization=on,secure=on -cpu cortex-a57 -bios boot.bin -d int -D exceptions.log
+
+# Loaded and start from RAM by QEMU.
+qemu-system-aarch64 -M virt,virtualization=on,secure=on -cpu cortex-a57 -kernel boot.elf -d int -D exceptions.log
+```
+
 ### 2.1. Debugging
 
 By using QEMU, we have some advantages for debugging, the bare metal boot code may be harder, but not impossible. let's discover some ways.
@@ -69,7 +87,32 @@ You can run either Aarch64 GDB `aarch64-none-linux-gnu-gdb` that is provided by 
 aarch64-none-linux-gnu-gdb boot.elf -ex "target remote:1234"
 ```
 
-NOTE that the symbol address in the binary do not match runtime address. The symbol addresses that you see in ELF file, might not what GDB see, because you are running binary firmware, the instruction at memory address `0x40000144`, GDB might see it at `0x144`, so if you we want to set a break point, you have to set `b *0x144`.
+NOTE that the symbol address in the binary do not match runtime address. The symbol addresses that you see in ELF file, might not what GDB see. For example, the ELF files define program start at the address `0x40000000`, and symbols are based on this address, but when the program running, we DIDN'T load the firmware to address `0x40000000`, instead of that we load them to ROM first (`0x00000000`), and then the code will perform self-relocating to `0x40000000`. So when the program is running at ROM, self-relocating code part will not match to the symbol address that GDB see. So you can not set break point with a label, for example `b _relocate`, GDB will map to it to `0x40000000` from ELF file, but in fact, this code is only be run in case we load the firmware to ROM, so symbol `_relocate` actually start from `0x00000000`. In that case, we have another solution, is that setting break point at a specific address.
+
+For example, let's say we want to set break point at ROM code `copy_loop` label. We read ELF file:
+
+```bash
+$ ../toolchain/bin/aarch64-none-linux-gnu-readelf boot.elf -s | grep copy_loop
+    15: 0000000040000010     0 NOTYPE  LOCAL  DEFAULT    1 copy_loop
+```
+
+This message show that the label `copy_loop` is located at address `0x0000000040000010`. But in fact, we know that this piece of code will run at `0x00000000` instead of `0x40000000`. So we have to set break point at address `0x10`:
+
+```bash
+aarch64-none-linux-gnu-gdb boot.elf -ex "target remote:1234"
+
+(gdb) b *0x10
+Breakpoint 1 at 0x10
+(gdb) c
+Continuing.
+
+Breakpoint 1, 0x0000000000000010 in ?? ()
+(gdb)
+```
+
+When we perform `c -- continue` the program will start at our point: `0x0000000000000010`.
+
+We will discuss more in the ROM boot - Self Relocating section.
 
 #### 2.1.2. Using QEMU log items
 
@@ -124,19 +167,28 @@ Other options like `-D` help you to redirect these item logs into other output, 
 Unlike the real hardware, maybe need more steps to setup UART, by using QEMU, we can write directly characters into UART Tx by writing to the Tx register. And the log by default will be redirected into stdout. As we know the UART0 peripheral start at memory address 0x09000000, here is the simple macro that I wrote in Aarch64 Assembly to write character directly to Tx register:
 
 ```asm
-.macro qemu_print addr, len
+.macro qemu_print reg, len
+    sub sp, sp, #24
+    str x10, [sp, #0]
+    str x11, [sp, #8]
+    str x12, [sp, #16]
+
     mov x10, #0x09000000
     mov x11, #\len
-    mov x12, #\addr
+    ldr x12, =\reg
 1:
-    ldrb w2, [x12]
-    str w2, [x10]
-    cmp x11, #0
+    ldrb w2, [x12] /* Get the first byte and clear all the rest. */
+    strb w2, [x10]
+    cmp x11, #1
     beq 2f
     sub x11, x11, #1
     add x12, x12, #1
     b 1b
 2:
+    ldr x12, [sp, #16]
+    ldr x11, [sp, #8]
+    ldr x10, [sp, #0]
+    add sp, sp, #24
 .endm
 ```
 
@@ -144,10 +196,10 @@ This macro send byte to byte in a loop from the address `addr` with length `len`
 And here is how we use the `qemu_print`:
 
 ```asm
-qemu_print hello_message hello_message_len
+qemu_print hello_message, hello_message_len
 
 hello_message: .asciz "Aarch64 bare metal code!\n"
-hello_message_len = . - hello_message - 1
+hello_message_len = . - hello_message
 ```
 
 it's easier to write the print function with C:
@@ -181,14 +233,31 @@ In the real hardware, after a reset, the processors will enter EL3 by default. S
 qemu-system-aarch64 -M virt,virtualization=on,secure=on -cpu cortex-a57 -bios boot.bin -d int -D exceptions.log
 ```
 
-## 3. Basic about AArch64 Assembly
+## Checking current exception level
 
-- Operators.
-- Load/store architecture.
-- Exception table.
-- `eret` instruction.
-- Inline assembly.
-- System calls: `svc`, `hvc`.
-- Registers.
+```asm
+_start:
+    /* We don't know current EL yet, so we load a generic stack pointer. */
+    ldr x30, =stack_top
+    mov sp, x30
+
+    qemu_print hello_message, hello_message_len
+
+    /* Check current EL.*/
+    mrs x1, CurrentEL
+    cmp x1, 0
+    beq in_el0
+
+    cmp x1, 0b0100
+    beq in_el1
+
+    cmp x1, 0b1000
+    beq in_el2
+
+    cmp x1, 0b1100
+    beq in_el3
+
+    b .
+```
 
 ## 4. Build system
