@@ -204,6 +204,16 @@ This script is written in the linker command language. The main purpose of this 
 
 ## 3. GNU Debugger
 
+- `gdb -ex "target remote :1234"` -- To start GDB and execute a command: target remote :1234
+- `gdb firmware.elf` -- Load symbol from firmware.elf file.
+- `(gdb) si` -- step one instruction.
+- `(gdb) c` -- continue, running until met break point.
+- `(gdb) b *0x30` -- set break point at address 0x30. We can use readelf tool to check the symbol address and then using this command to set break point.
+- `(gdb) del 3` -- Delete break point 3.
+- `(gdb) i r` -- Register info.
+- `(gdb) i r pc` -- So specific register info, in this case: pc.
+- `(gdb) dump binary memory output.bin 0x0 0x10000` -- Dump runtime memory from 0x0 to 0x10000 to output.bin in binary format.
+
 ## 4. Other utilities
 
 ### 4.1. objcopy
