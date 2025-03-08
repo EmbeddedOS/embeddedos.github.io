@@ -233,9 +233,9 @@ In the real hardware, after a reset, the processors will enter EL3 by default. S
 qemu-system-aarch64 -M virt,virtualization=on,secure=on -cpu cortex-a57 -bios boot.bin -d int -D exceptions.log
 ```
 
-## Application memory layout
+## 3. Implementation
 
-## Checking current exception level
+### 3.1. Checking current exception level
 
 When application starts running, first thing we do is check the current EL, in real system, processor will start at EL3, we are using QEMU and able to choose whichever you want, so let's cover all scenarios.
 
@@ -285,6 +285,234 @@ AArch64 have a special register `CurrentEL` that hold the current EL value at bi
 
 So we check this register, compare the value and jump to corresponding label.
 
-The `stack_top` symbol value is set in Linker Script, at the end of our memory layout.
+### 3.2. Entering lower exception level code
 
-## 4. Build system
+The processor only change the exception levels when an exception is taken or returned. So if the processor start with an higher level and we want to enter lower, we have to use a *fake exception return*. These steps are:
+
+1. Initialize execution state and control registers.
+2. Executing `eret` instruction.
+
+There are two special registers used to return from an exception:
+
+- `SPSR_ELx` -- Saved Program Status Register -- This register holds the saved process state when an exception is taken into corresponding `ELx` level.
+- `ELR_ELx` -- Exception Link Register -- when taking an exception to ELx, holds the address to return to.
+
+Normally, these registers are saved automatically by hardware when entering an exceptions, but in our case, we want to change from higher to lower level, we have to configure them manually. And when we call the `eret` instruction, hardware will read these registers and restore the CPU state.
+
+#### 3.2.1. EL3 to EL2
+
+If our application starts running at EL3, the CPU will jump to this piece of code `in_el3`, this is where we need to set up the execution state to return to EL2.
+
+```test
+in_el3:
+    /* Secure monitor code. */
+    qemu_print in_el3_message, in_el3_message_len
+
+    ldr x1, =vector_table_el3       /* Load EL3 vector table.                 */ 
+    msr vbar_el3, x1
+
+    /* Set up Execution state before return to EL2. */
+    msr sctlr_el2, xzr      /* Clear System Control Register.                */
+    msr hcr_el2, xzr        /* Clear the Hypervisor Control Register.         */
+
+    mrs x0, scr_el3         /* Configure Secure Control Register:             */
+    orr x0, x0, #(1<<10)    /* EL2 exception state is AArch64.                */
+    orr x0, x0, #(1<<0)     /* Non Secure state for EL1.                      */
+    msr scr_el3, x0
+
+    mov x0, #0b000001001    /* DAIF[8:5]=0000 M[4:0]=01001 EL0 state:         */
+    msr spsr_el3, x0        /* Select EL2 with SP_EL2.                        */
+
+    ldr x30, =el2_stack_top
+    msr sp_el2, x30
+
+    adr x0, in_el2
+    msr elr_el3, x0
+    eret
+
+in_el2:
+    /* EL2 code. */
+```
+
+ Because We do not use secure feature, so we disable the Security state of EL2 and lower. we do that by setting NS, bit[0] in `scr_el3` -- Secure configuration register. Bits[4:0] in register `spsr_el3`, decided Exception Level and selected Stack pointer, we configure value `0b1001` indicate the state will return is in EL2 with SP_EL2 (EL2h). We configure `sp_el2` to point to our EL2 stack pointer (I'm using separately stack for each EL code, but you can also use the same stack for ELs). Finally, we load the `in_el2` relative address into `elr_el3` and call `eret` to return to EL2.
+
+#### 3.2.2. EL2 to EL1
+
+Even if processor starts at EL3, we changed from EL3 to EL2, or starts at EL2, the EL2 code will start from here:
+
+```test
+in_el2:
+    qemu_print in_el2_message, in_el2_message_len
+
+    ldr x1, =vector_table_el2       /* Load EL2 vector table.                 */ 
+    msr vbar_el2, x1
+
+    /* Set up Execution state before return to EL1. */
+    msr sctlr_el1, xzr      /* Clear System Control Register.                 */
+
+    mrs x0, hcr_el2         /* Set bit 31th: RW the Execution state for EL1.  */
+    orr x0, x0, #(1<<31)
+    msr hcr_el2, x0
+
+    mov x0, #0b000000101    /* DAIF[8:5]=0000 M[4:0]=00101 The state indicate */
+    msr spsr_el2, X0        /* EL1 with SP_EL1.                               */
+
+    ldr x30, =el1_stack_top
+    msr sp_el1, x30
+
+    adr x0, in_el1
+    msr elr_el2, x0
+
+    eret
+
+in_el1:
+    /* EL1 code. */
+```
+
+Similar to changing EL3 to EL2, we set up the Execution state before return to EL1. We also need to configure the Execution state for EL1 is AArch64 by setting bit[31] in `hcr_el2`.
+
+### 3.2.3. EL1 to EL0
+
+```text
+in_el1:
+    qemu_print in_el1_message, in_el1_message_len
+
+    /* Set up Execution state before return to EL0. */
+    ldr x1, =vector_table_el1
+    msr vbar_el1, x1
+
+    mov x0, #0b000000000    /* DAIF[8:5]=0000 M[4:0]=00000 EL0 state.         */
+    msr spsr_el1, x0
+
+    ldr x30, =el0_stack_top
+    msr sp_el0, x30
+
+    adr x0, in_el0
+    msr elr_el1, x0
+    eret
+
+in_el0:
+    qemu_print in_el0_message, in_el0_message_len
+    bl el0_main
+    b .
+```
+
+The EL1 do the same steps to change into EL0. And now we are in the EL0, I want to change to C code a bit because Assembly is so boring 😛. The `el0_main` is written in C:
+
+```c
+void el0_main()
+{
+    print_uart0("Enter el0_main!\n");
+
+    asm("svc #0");
+
+    print_uart0("Exit el0_main!\n");
+}
+```
+
+The user code do nothing but call a system call to request service from EL1, that we'll discuss more in next sections.
+
+### 3.3. Vector tables
+
+Unlike Cortex-M vector table, where we have only one table at fixed-location memory. On Cortex-A, we have vector table for each EL, and of course, the memory is flexible (but must be placed at a 2KB-aligned address). The addresses are specified by initializing `VBAR_ELx` registers, as you can see I did for all EL code before.
+
+There are 16 entries for each table, each entry is 128B in size and contains at most 32 instructions.
+
+![Vector Table Structure](assets/img/aarch64_vector_table_structure.png)
+
+Here is how we make the table in assembly:
+
+```text
+.text
+.balign 0x800
+vector_table_el1:
+el1_curr_el_sp0_sync:
+    b .
+.balign 0x80
+el1_curr_el_sp0_irq:
+    b .
+.balign 0x80
+el1_curr_el_sp0_fiq:
+    b .
+.balign 0x80
+el1_curr_el_sp0_serror:
+    b .
+.balign 0x80
+el1_curr_el_sp1_sync:
+    b .
+.balign 0x80
+el1_curr_el_sp1_irq:
+    b .
+.balign 0x80
+el1_curr_el_sp1_fiq:
+    b .
+.balign 0x80
+el1_curr_el_sp1_serror:
+    b .
+.balign 0x80
+el1_lower_el_aarch64_sync:
+    b el1_lower_el_aarch64_sync_handler
+.balign 0x80
+el1_lower_el_aarch64_irq:
+    b .
+.balign 0x80
+el1_lower_el_aarch64_fiq:
+    b .
+.balign 0x80
+el1_lower_el_aarch64_serror:
+    b .
+.balign 0x80
+el1_lower_el_aarch32_sync:
+    b .
+.balign 0x80
+el1_lower_el_aarch32_irq:
+    b .
+.balign 0x80
+el1_lower_el_aarch32_fiq:
+    b .
+.balign 0x80
+el1_lower_el_aarch32_serror:
+    b .
+```
+
+Load the EL1 vector table address into `vbar_el1`.
+
+```text
+in_el1:
+    /* ... */
+    ldr x1, =vector_table_el1
+    msr vbar_el1, x1
+    /* ... */
+```
+
+I'm currently not handling other exceptions except the exception from lower EL using AArch64 `el1_lower_el_aarch64_sync_handler` that is mainly used to handle `svc` command from EL0, we will discuss more in the next section. We branch into `el1_lower_el_aarch64_sync_handler` to handle this one, otherwise, I use `b .` to loop forever, it means I haven't implemented yet 😛.
+
+### 3.4. System calls
+
+System calls are the way lower level code request for higher level code services. We have four ELs so we have three system call instructions to request upper services:
+
+- `svc` -- EL0 request to EL1.
+- `hvc` -- EL1 request to EL2.
+- `smc` -- Lower (EL1, EL2) to EL3.
+
+In this project, I will demonstrate by implementing an `svc` handler, to handle request from EL0 to EL1.
+
+#### 3.4.1. Synchronous exception handling
+
+#### 3.4.2. Saving/Restoring current state
+
+#### 3.4.3. Kernel system call dispatcher
+
+## 4. ROM code and self-relocating
+
+## 5. Testing system
+
+Start CPU execution at EL3:
+
+Start CPU execution at EL2:
+
+Start CPU execution at EL1:
+
+Load firmware as a ROM boot code and do self-relocate:
+
+That's it for this blog, I hope you learn something, if you want me to learn more about other stuff, don't be shy message to me 😛.
