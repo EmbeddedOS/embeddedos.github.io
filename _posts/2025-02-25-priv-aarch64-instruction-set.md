@@ -79,7 +79,7 @@ published: false
 ## AArch64 Calling conventions
 
 - `x31` (SP) -- Stack pointer or a zero register, depending on context.
-- `x30` (LR) -- Procedure link register, used to return from subroutines.
+- `x30` (LR) -- Procedure link register, used to return from subroutines. If you call `ret`, CPU read x30 to load to PC.
 - `x29` (FP) -- Frame pointer.
 - `x19` to x28 -- Callee-saved.
 - `x18` (PR) -- Platform register. Used for some operating-system-specific special purpose, or an additional caller-saved register.

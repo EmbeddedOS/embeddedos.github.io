@@ -285,6 +285,37 @@ AArch64 have a special register `CurrentEL` that hold the current EL value at bi
 
 So we check this register, compare the value and jump to corresponding label.
 
+### 3.1. Stack pointer
+
+Each exception level has its own stack pointer. When you are in ELx, the `sp` refer to actual register `SP_ELx`. So you should create a stack frame for each EL, big enough, and shouldn't point to the same address. I have spent `0x1000` for each stack, and define them in the linker script file:
+
+```text
+SECTIONS
+{
+ . = 0x40000000;
+ .start : {head.o (.text)}
+ .text : { *(.text) }
+ .rodata : { *(.rodata) }
+ .data : { *(.data) }
+ _end_copy_image = .;
+ .bss : { *(.bss COMMON) }
+ . = ALIGN(8);
+ . = . + 0x1000;
+ el3_stack_top = .;
+ . = . + 0x1000;
+ el2_stack_top = .;
+ . = . + 0x1000;
+ el1_stack_top = .;
+ . = . + 0x1000;
+ el0_stack_top = .;
+ stack_top = .;
+ . = ALIGN(8);
+}
+```
+
+> You can only use the name `SP_ELx` to access stack pointer of lower exception level. For example, if you are in EL2, you only can access to `SP_EL1`, `SP_EL0`, you can not use `SP_EL3` due to the permission, and the `SP_EL2` due to you are in EL2, and `sp` is actually refer to `SP_EL2`, try to access might cause an exception.
+{: .prompt-info }
+
 ### 3.2. Entering lower exception level code
 
 The processor only change the exception levels when an exception is taken or returned. So if the processor start with an higher level and we want to enter lower, we have to use a *fake exception return*. These steps are:
@@ -306,13 +337,15 @@ If our application starts running at EL3, the CPU will jump to this piece of cod
 ```test
 in_el3:
     /* Secure monitor code. */
+    ldr x1, =el3_stack_top
+    mov sp, x1
     qemu_print in_el3_message, in_el3_message_len
 
     ldr x1, =vector_table_el3       /* Load EL3 vector table.                 */ 
     msr vbar_el3, x1
 
     /* Set up Execution state before return to EL2. */
-    msr sctlr_el2, xzr      /* Clear System Control Register.                */
+    msr sctlr_el2, xzr      /* Clear System Control Register.                 */
     msr hcr_el2, xzr        /* Clear the Hypervisor Control Register.         */
 
     mrs x0, scr_el3         /* Configure Secure Control Register:             */
@@ -323,9 +356,6 @@ in_el3:
     mov x0, #0b000001001    /* DAIF[8:5]=0000 M[4:0]=01001 EL0 state:         */
     msr spsr_el3, x0        /* Select EL2 with SP_EL2.                        */
 
-    ldr x30, =el2_stack_top
-    msr sp_el2, x30
-
     adr x0, in_el2
     msr elr_el3, x0
     eret
@@ -334,14 +364,16 @@ in_el2:
     /* EL2 code. */
 ```
 
- Because We do not use secure feature, so we disable the Security state of EL2 and lower. we do that by setting NS, bit[0] in `scr_el3` -- Secure configuration register. Bits[4:0] in register `spsr_el3`, decided Exception Level and selected Stack pointer, we configure value `0b1001` indicate the state will return is in EL2 with SP_EL2 (EL2h). We configure `sp_el2` to point to our EL2 stack pointer (I'm using separately stack for each EL code, but you can also use the same stack for ELs). Finally, we load the `in_el2` relative address into `elr_el3` and call `eret` to return to EL2.
+ Because We do not use secure feature, so we disable the Security state of EL2 and lower. we do that by setting NS, bit[0] in `scr_el3` -- Secure configuration register. Bits[4:0] in register `spsr_el3`, decided Exception Level and selected Stack pointer, we configure value `0b1001` indicate the state will return is in EL2 with SP_EL2 (EL2h). Finally, we load the `in_el2` relative address into `elr_el3` and call `eret` to return to EL2.
 
 #### 3.2.2. EL2 to EL1
 
 Even if processor starts at EL3, we changed from EL3 to EL2, or starts at EL2, the EL2 code will start from here:
 
-```test
+```text
 in_el2:
+    ldr x1, =el2_stack_top
+    mov sp, x1
     qemu_print in_el2_message, in_el2_message_len
 
     ldr x1, =vector_table_el2       /* Load EL2 vector table.                 */ 
@@ -356,9 +388,6 @@ in_el2:
 
     mov x0, #0b000000101    /* DAIF[8:5]=0000 M[4:0]=00101 The state indicate */
     msr spsr_el2, X0        /* EL1 with SP_EL1.                               */
-
-    ldr x30, =el1_stack_top
-    msr sp_el1, x30
 
     adr x0, in_el1
     msr elr_el2, x0
@@ -375,6 +404,8 @@ Similar to changing EL3 to EL2, we set up the Execution state before return to E
 
 ```text
 in_el1:
+    ldr x1, =el1_stack_top
+    mov sp, x1
     qemu_print in_el1_message, in_el1_message_len
 
     /* Set up Execution state before return to EL0. */
@@ -384,14 +415,13 @@ in_el1:
     mov x0, #0b000000000    /* DAIF[8:5]=0000 M[4:0]=00000 EL0 state.         */
     msr spsr_el1, x0
 
-    ldr x30, =el0_stack_top
-    msr sp_el0, x30
-
     adr x0, in_el0
     msr elr_el1, x0
     eret
 
 in_el0:
+    ldr x1, =el0_stack_top
+    mov sp, x1
     qemu_print in_el0_message, in_el0_message_len
     bl el0_main
     b .
@@ -495,13 +525,50 @@ System calls are the way lower level code request for higher level code services
 - `hvc` -- EL1 request to EL2.
 - `smc` -- Lower (EL1, EL2) to EL3.
 
+These instructions trigger an synchronous exception to upper level, and the return address indicates the instruction that caused it. There are some registers supply the key information for handling of sync exceptions, as well as SErrors:
+
+- `ESR_ELx` -- Exception syndrome register -- provides information about the cause and type of sync exception.
+- `FAR_ELx` -- Fault address register -- holds the faulting virtual address for address-related sync exceptions, such as MMU fault.
+- `ELR_ELx` -- Exception link register -- holds the address of the triggering instruction, providing the return address for the exception.
+
 In this project, I will demonstrate by implementing an `svc` handler, to handle request from EL0 to EL1.
 
-#### 3.4.1. Synchronous exception handling
+#### 3.4.1. SVC exception handling
+
+Triggering `svc` instruction following these steps:
+
+1. Hardware: Current state `PSTATE` is preserved as a snapshot in `SPSR_EL1`.
+2. Hardware: Exception return address is written to `ESR_EL1`.
+3. `PSTATE` is updated, with EL changed to EL1. `ESR_ELx` is updated to indicate a type of sync exception.
+4. Hardware: CPU branch to the vector table (pointed to by `VBAR_EL1`) at offset `0x400` (Synchronous - Lower EL using Aarch64).
+5. Software: Registers are stacked to maintain register context.
+6. Software: Specific SVC code is then executed.
+7. Software: Restore all previous stacked registers and executes and `ERET` instruction.
+8. Hardware: `PSTATE` is restored from `SPSR_EL1` and the `pc` is updated to the value contained in `ELR_EL1`.
+
+There are some steps are done by the hardware, our jobs, as the software is save the context, handle SVC request, and restore the context before exiting.
+
+![Exception handler](assets/img/exception_handler.png)
 
 #### 3.4.2. Saving/Restoring current state
 
+There are 31 registers that determine the current context, `x0..x30`. We save them as a trap frame before handling the exception, and restore them before exiting back to the previous context.
+
+```c
+```
+
 #### 3.4.3. Kernel system call dispatcher
+
+There is only one instruction `svc` to request services from EL0 to EL1. But, there are so many resources EL0 need to access. For example, an application maybe want to read/write to a file on the hard disk, but also wants to connect to a HTTP server via the Internet. To indicate which service EL0 want to do, we use well-known numbers called as *system call numbers*. The Kernel (EL1) maintains a table to dispatch from the number to corresponding system call handler.
+
+There are several ways to pass the number when calling a `svc`:
+
+1. Using svc number, that is passed when calling the `svc` instruction. For example, `svc #4`, indicates EL0 want to request service 4 in EL1. There are some limits to this approach, for example the number is limited from 0-255.
+2. Using general registers as request's parameters.
+
+The Second approach is the most popular, Linux is an example, that using `x8` to hold the system call number and `x0..x7` as argument registers. The system call result is saved into `x0`.
+
+The svc number is stored in the 16
 
 ## 4. ROM code and self-relocating
 

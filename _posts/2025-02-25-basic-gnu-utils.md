@@ -213,6 +213,10 @@ This script is written in the linker command language. The main purpose of this 
 - `(gdb) i r` -- Register info.
 - `(gdb) i r pc` -- So specific register info, in this case: pc.
 - `(gdb) dump binary memory output.bin 0x0 0x10000` -- Dump runtime memory from 0x0 to 0x10000 to output.bin in binary format.
+- `(gdb) disas label` -- Disassembly function or label code.
+- `(gdb) disas 0x40001000 0x40001016` -- Disassembly from 0x40001000 to 0x40001016.
+- `(gdb) disas 0x40001000` -- Disassembly 0x40001000.
+- `(gdb) n` -- Next, in case of function, go through and not jump into.
 
 ## 4. Other utilities
 
