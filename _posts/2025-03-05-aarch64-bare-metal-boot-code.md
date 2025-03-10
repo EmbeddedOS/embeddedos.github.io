@@ -285,9 +285,9 @@ AArch64 have a special register `CurrentEL` that hold the current EL value at bi
 
 So we check this register, compare the value and jump to corresponding label.
 
-### 3.1. Stack pointer
+### 3.2. Stack pointer
 
-Each exception level has its own stack pointer. When you are in ELx, the `sp` refer to actual register `SP_ELx`. So you should create a stack frame for each EL, big enough, and shouldn't point to the same address. I have spent `0x1000` for each stack, and define them in the linker script file:
+Each exception level has its own stack pointer. When you are in ELx, the `sp` refer to actual register `SP_ELx`. So you should create a stack frame for each EL, big enough, at least enough for handling exceptions. I have spent `0x1000` for each stack, and define them in the linker script file:
 
 ```text
 SECTIONS
@@ -316,7 +316,7 @@ SECTIONS
 > You can only use the name `SP_ELx` to access stack pointer of lower exception level. For example, if you are in EL2, you only can access to `SP_EL1`, `SP_EL0`, you can not use `SP_EL3` due to the permission, and the `SP_EL2` due to you are in EL2, and `sp` is actually refer to `SP_EL2`, try to access might cause an exception.
 {: .prompt-info }
 
-### 3.2. Entering lower exception level code
+### 3.3. Entering lower exception level code
 
 The processor only change the exception levels when an exception is taken or returned. So if the processor start with an higher level and we want to enter lower, we have to use a *fake exception return*. These steps are:
 
@@ -330,7 +330,7 @@ There are two special registers used to return from an exception:
 
 Normally, these registers are saved automatically by hardware when entering an exceptions, but in our case, we want to change from higher to lower level, we have to configure them manually. And when we call the `eret` instruction, hardware will read these registers and restore the CPU state.
 
-#### 3.2.1. EL3 to EL2
+#### 3.3.1. EL3 to EL2
 
 If our application starts running at EL3, the CPU will jump to this piece of code `in_el3`, this is where we need to set up the execution state to return to EL2.
 
@@ -366,7 +366,7 @@ in_el2:
 
  Because We do not use secure feature, so we disable the Security state of EL2 and lower. we do that by setting NS, bit[0] in `scr_el3` -- Secure configuration register. Bits[4:0] in register `spsr_el3`, decided Exception Level and selected Stack pointer, we configure value `0b1001` indicate the state will return is in EL2 with SP_EL2 (EL2h). Finally, we load the `in_el2` relative address into `elr_el3` and call `eret` to return to EL2.
 
-#### 3.2.2. EL2 to EL1
+#### 3.3.2. EL2 to EL1
 
 Even if processor starts at EL3, we changed from EL3 to EL2, or starts at EL2, the EL2 code will start from here:
 
@@ -400,7 +400,7 @@ in_el1:
 
 Similar to changing EL3 to EL2, we set up the Execution state before return to EL1. We also need to configure the Execution state for EL1 is AArch64 by setting bit[31] in `hcr_el2`.
 
-### 3.2.3. EL1 to EL0
+### 3.3.3. EL1 to EL0
 
 ```text
 in_el1:
@@ -432,9 +432,25 @@ The EL1 do the same steps to change into EL0. And now we are in the EL0, I want 
 ```c
 void el0_main()
 {
+    u64 result = 0;
     print_uart0("Enter el0_main!\n");
 
-    asm("svc #0");
+    /* 1. Request the syscall. */
+    asm("mov x0, #1;" /* x0 -- holds the first parameter.   */
+        "mov x1, #2;" /* x1 -- holds the second parameter.  */
+        "mov x8, #4;" /* x8 -- holds the syscall number.    */
+        "svc #0");
+
+    /* 2. Get the syscall result. */
+    asm("mov x0,%0" : "=r"(result));
+    if (result != 3)
+    {
+        print_uart0("System call return a incorrect result.\n");
+    }
+    else
+    {
+        print_uart0("System call return a correct result.\n");
+    }
 
     print_uart0("Exit el0_main!\n");
 }
@@ -442,7 +458,7 @@ void el0_main()
 
 The user code do nothing but call a system call to request service from EL1, that we'll discuss more in next sections.
 
-### 3.3. Vector tables
+### 3.4. Vector tables
 
 Unlike Cortex-M vector table, where we have only one table at fixed-location memory. On Cortex-A, we have vector table for each EL, and of course, the memory is flexible (but must be placed at a 2KB-aligned address). The addresses are specified by initializing `VBAR_ELx` registers, as you can see I did for all EL code before.
 
@@ -515,9 +531,9 @@ in_el1:
     /* ... */
 ```
 
-I'm currently not handling other exceptions except the exception from lower EL using AArch64 `el1_lower_el_aarch64_sync_handler` that is mainly used to handle `svc` command from EL0, we will discuss more in the next section. We branch into `el1_lower_el_aarch64_sync_handler` to handle this one, otherwise, I use `b .` to loop forever, it means I haven't implemented yet 😛.
+I'm currently not handling other exceptions except the exception from lower EL using AArch64 `el1_lower_el_aarch64_sync_handler` that is mainly used to handle `svc` command from EL0, we will discuss more in the next section. We branch into `el1_lower_el_aarch64_sync_handler` to handle this one, for others, I use `b .` to loop forever, it means I haven't implemented yet 😛.
 
-### 3.4. System calls
+### 3.5. System calls
 
 System calls are the way lower level code request for higher level code services. We have four ELs so we have three system call instructions to request upper services:
 
@@ -533,7 +549,7 @@ These instructions trigger an synchronous exception to upper level, and the retu
 
 In this project, I will demonstrate by implementing an `svc` handler, to handle request from EL0 to EL1.
 
-#### 3.4.1. SVC exception handling
+#### 3.5.1. SVC exception handling
 
 Triggering `svc` instruction following these steps:
 
@@ -550,14 +566,83 @@ There are some steps are done by the hardware, our jobs, as the software is save
 
 ![Exception handler](assets/img/exception_handler.png)
 
-#### 3.4.2. Saving/Restoring current state
+#### 3.5.2. Saving/Restoring current state
 
-There are 31 registers that determine the current context, `x0..x30`. We save them as a trap frame before handling the exception, and restore them before exiting back to the previous context.
+There are 31 registers that determine the current context, `x0..x30`. We save them as a trap frame before handling the exception, and restore them before exiting back to the previous context. As I mentioned about the stack before, in that case `SP_EL1`, it should be big enough to save the trap frame and handle specific exceptions (I have met a stack corruption issue, and it was so painful to debug 😭).
 
 ```c
+.macro save_trap_frame el
+    stp x29, x30, [sp, #-16]!
+    stp x27, x28, [sp, #-16]!
+    stp x25, x26, [sp, #-16]!
+    stp x23, x24, [sp, #-16]!
+    stp x21, x22, [sp, #-16]!
+    stp x19, x20, [sp, #-16]!
+    stp x17, x18, [sp, #-16]!
+    stp x15, x16, [sp, #-16]!
+    stp x13, x14, [sp, #-16]!
+    stp x11, x12, [sp, #-16]!
+    stp x9, x10, [sp, #-16]!
+    stp x7, x8, [sp, #-16]!
+    stp x5, x6, [sp, #-16]!
+    stp x3, x4, [sp, #-16]!
+    stp x1, x2, [sp, #-16]!
+
+    mrs x21, spsr_\el
+    stp x21, x0, [sp, #-16]!
+.endm
+
+.macro restore_trap_frame el
+    ldp x21, x0, [sp], #16
+    msr spsr_\el, x21
+    ldp x1, x2, [sp], #16
+    ldp x3, x4, [sp], #16
+    ldp x5, x6, [sp], #16
+    ldp x7, x8, [sp], #16
+    ldp x9, x10, [sp], #16
+    ldp x11, x12, [sp], #16
+    ldp x13, x14, [sp], #16
+    ldp x15, x16, [sp], #16
+    ldp x17, x18, [sp], #16
+    ldp x19, x20, [sp], #16
+    ldp x21, x22, [sp], #16
+    ldp x23, x24, [sp], #16
+    ldp x25, x26, [sp], #16
+    ldp x27, x28, [sp], #16
+    ldp x29, x30, [sp], #16
+.endm
+
+el1_lower_el_aarch64_sync_handler:
+    save_trap_frame el1
+    mov x0, sp
+    mrs x1, esr_el1
+    bl el1_sync_handler
+    restore_trap_frame el1
+    eret
 ```
 
-#### 3.4.3. Kernel system call dispatcher
+To handle the exception, I jumped into `el1_sync_handler` in C, and pass the `trap_frame` pointer and `esr_el1` parameters along with that.
+
+```c
+#define SVC_AARCH64 0b010101
+#define GET_EC_BITS(reg) (((reg >> 26) << 32) >> 32)
+
+void el1_sync_handler(trap_frame_t *trap_frame, u64 esr_el1)
+{
+    /* 1. Parse the Exception Class bits[31:26] in ESR_EL1. */
+    if (GET_EC_BITS(esr_el1) == SVC_AARCH64)
+    {
+        svc_handler(trap_frame);
+    }
+    else
+    { // Not implemented yet.
+    }
+}
+```
+
+The reason `esr_el1` is needed is that, it provides us information about the exception, in that case, bits[31:26] tell us about the Exception Class. For now, we capture and handle the SVC exception only.
+
+#### 3.5.3. Kernel system call dispatcher
 
 There is only one instruction `svc` to request services from EL0 to EL1. But, there are so many resources EL0 need to access. For example, an application maybe want to read/write to a file on the hard disk, but also wants to connect to a HTTP server via the Internet. To indicate which service EL0 want to do, we use well-known numbers called as *system call numbers*. The Kernel (EL1) maintains a table to dispatch from the number to corresponding system call handler.
 
@@ -566,9 +651,37 @@ There are several ways to pass the number when calling a `svc`:
 1. Using svc number, that is passed when calling the `svc` instruction. For example, `svc #4`, indicates EL0 want to request service 4 in EL1. There are some limits to this approach, for example the number is limited from 0-255.
 2. Using general registers as request's parameters.
 
-The Second approach is the most popular, Linux is an example, that using `x8` to hold the system call number and `x0..x7` as argument registers. The system call result is saved into `x0`.
+The Second approach is the most popular, Linux is an example, that using `x8` to hold the system call number and `x0..x7` as argument registers. The system call result is saved into `x0`. We will use it as a standard, so in the `svc_handler` we implement a simple dispatcher like this:
 
-The svc number is stored in the 16
+```c
+#define ADD_SYSCALL_NUMBER 4
+#define MAX_SYSCALL 10
+
+typedef void (*syscall)(trap_frame_t *trap_frame);
+
+const syscall syscalls[MAX_SYSCALL] = {
+    /* ... */
+    [ADD_SYSCALL_NUMBER] = add_syscall_handler,
+    /* ... */
+};
+
+void svc_handler(trap_frame_t *trap_frame)
+{
+    /* 1. Validate system call number. */
+    if (trap_frame->x8 >= MAX_SYSCALL || syscalls[trap_frame->x8] == NULL)
+    {
+        print_uart0("Invalid syscall number!\n");
+        return;
+    }
+
+    /* 2. Call corresponding system call. */
+    syscalls[trap_frame->x8](trap_frame);
+}
+```
+
+First we validate the system call number that is stored in `x8`, and then we call the corresponding system call handler.
+
+#### 3.5.4. Request a system call from user
 
 ## 4. ROM code and self-relocating
 
