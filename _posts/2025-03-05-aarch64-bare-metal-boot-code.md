@@ -16,10 +16,13 @@ published: true
 ## 1. Objective
 
 - Understand Aarch64 booting flow, exception levels.
-- Using QEMU as a base platform.
-- Firmware can boot from any EL level and able to change Exception Level from EL3 to EL0.
-- Firmware is able to be loaded to ROM and perform self-relocating or loaded to RAM and running directly.
-- Using system call `svc` from EL0 user space to request EL1 Kernel service.
+- Using QEMU `virt` machine as a hardware platform.
+- Booting system from ROM as a bootloader.
+- Booting system from RAM as a kernel.
+- Self-relocating from ROM to RAM and start executing.
+- Able to boot from any Exception Level (EL3->EL0) and changing to lower levels.
+- Run the EL0 code in C, and request `svc` system call to the kernel (EL1 code) and get the result.
+- Implement a system call dispatcher in EL1.
 - Debugging system with GDB.
 
 ## 2. Hardware platform - QEMU
@@ -679,20 +682,183 @@ void svc_handler(trap_frame_t *trap_frame)
 }
 ```
 
-First we validate the system call number that is stored in `x8`, and then we call the corresponding system call handler.
+First we validate the system call number that is stored in `x8`, and then we call the corresponding system call handler that is hold by the system call table `syscalls`.
 
 #### 3.5.4. Request a system call from user
 
+To call the `svc` instruction, we have to use inline assembly, and before that we have to setup other registers. The `x0` holds the first parameter, the `x1` holds the second parameter, and the `x8` holds the system call number.
+
+```c
+void el0_main()
+{
+    u64 result = 0;
+    print_uart0("Enter el0_main!\n");
+
+    /* 1. Request the syscall. */
+    asm("mov x0, #1;" /* x0 -- holds the first parameter.   */
+        "mov x1, #2;" /* x1 -- holds the second parameter.  */
+        "mov x8, #4;" /* x8 -- holds the syscall number.    */
+        "svc #0");
+
+    /* 2. Get the syscall result. */
+    asm("mov x0,%0" : "=r"(result));
+    if (result != 3)
+    {
+        print_uart0("System call return a incorrect result.\n");
+    }
+    else
+    {
+        print_uart0("System call return a correct result.\n");
+    }
+
+    print_uart0("Exit el0_main!\n");
+}
+```
+
+In this example, we are assuming that, we use system call number `4` for add service, that means we add two arguments and return the result.
+
+```c
+#define ADD_SYSCALL_NUMBER 4
+#define MAX_SYSCALL 10
+
+typedef void (*syscall)(trap_frame_t *trap_frame);
+
+const syscall syscalls[MAX_SYSCALL] = {
+    /* ... */
+    [ADD_SYSCALL_NUMBER] = add_syscall_handler,
+    /* ... */
+};
+
+void add_syscall_handler(trap_frame_t *trap_frame)
+{ // This syscall add two parameters and return the result.
+    trap_frame->x0 = trap_frame->x0 + trap_frame->x1;
+}
+```
+
+The result will be saved into `x0`, that is where the user code can get.
+
+```c
+    asm("mov x0,%0" : "=r"(result));
+```
+
 ## 4. ROM code and self-relocating
+
+Now assume that our firmware is flashed to ROM memory (start from 0x00000000) as a bootloader, there is no loader running before to parse the firmware format like ELF, etc. So firmware format should be raw binary and `.text` section must be first. The `_relocate` code copy the the firmware itself from `0x00000000` to `_end_copy_image` symbol and place to RAM `0x40000000`. And then jump to the RAM code and start executing.
+
+```text
+.text
+.globl _start
+
+/* If the firmware is run as ROM code, QEMU have no idea about the entry point. 
+ * So the CPU will start execute from 0x00000000, we perform relocating our 
+ * application to RAM. */
+_relocate:
+    mov x0, 0x00
+    ldr x1, =_end_copy_image
+    mov x2, #0x40000000
+    sub x1, x1, x2
+
+    // x0 holds start, x2 holds destination and x1 holds the copy size.
+copy_loop:
+    ldr x3, [x0]
+    str x3, [x2]
+
+    add x2, x2, #4
+    add x0, x0, #4
+    sub x1, x1, #4
+    cmp x1, #0
+    bne copy_loop
+
+    /* After loading, we jump into the application entry point on RAM. */
+    ldr x1, =_start
+    br x1
+
+/* Here is actually our application entry point, if the firmware is run as
+ * kernel. QEMU will read the entry point from ELF file, and jump directly to
+ * this address, ignore _relocate code. */
+_start:
+```
+
+Note that 2 symbols `_end_copy_image`, `_start` are replaced with values by the linker when linking, and the linker parse this the linker script, relocate and get the values. The point is, Linker script are assumed to run our firmware on RAM (start from `0x40000000`), so the value of `_end_copy_image` will be `0x40000000` + `.text` size + `.rodata` size + `.data`. And the `_start` value is calculated from `0x40000000` + `_start` label symbol.
+
+```text
+SECTIONS
+{
+ . = 0x40000000;
+ .start : {head.o (.text)}
+ .text : { *(.text) }
+ .rodata : { *(.rodata) }
+ .data : { *(.data) }
+ _end_copy_image = .;
+ .bss : { *(.bss COMMON) }
+ . = ALIGN(8);
+ . = . + 0x1000;
+ el3_stack_top = .;
+ . = . + 0x1000;
+ el2_stack_top = .;
+ . = . + 0x1000;
+ el1_stack_top = .;
+ . = . + 0x1000;
+ el0_stack_top = .;
+ stack_top = .;
+ . = ALIGN(8);
+}
+```
+
+So what I do here to get the image size is minus the `_end_copy_image` for `0x40000000`. And we copy the image size to RAM. Note that, we don't have to copy `.bss` section because there is no meaningful data in there.
 
 ## 5. Testing system
 
 Start CPU execution at EL3:
 
+```bash
+$ qemu-system-aarch64 -M virt,virtualization=on,secure=on -cpu cortex-a57 -nographic -kernel boot.elf -D log.txt -d int
+Aarch64 bare metal code!
+In EL3!
+In EL2!
+In EL1!
+In EL0!
+Enter el0_main!
+System call return a correct result.
+Exit el0_main!
+```
+
 Start CPU execution at EL2:
+
+```bash
+$ qemu-system-aarch64 -M virt,virtualization=on,secure=off -cpu cortex-a57 -nographic -kernel boot.elf -D log.txt -d int
+Aarch64 bare metal code!
+In EL2!
+In EL1!
+In EL0!
+Enter el0_main!
+System call return a correct result.
+Exit el0_main!
+```
 
 Start CPU execution at EL1:
 
+```bash
+$ qemu-system-aarch64 -M virt,virtualization=off,secure=off -cpu cortex-a57 -nographic -kernel boot.elf -D log.txt -d int
+Aarch64 bare metal code!
+In EL1!
+In EL0!
+Enter el0_main!
+System call return a correct result.
+Exit el0_main!
+```
+
 Load firmware as a ROM boot code and do self-relocate:
+
+```bash
+$ qemu-system-aarch64 -M virt,virtualization=on,secure=off -cpu cortex-a57 -nographic -bios boot.bin -D log.txt -d int
+Aarch64 bare metal code!
+In EL2!
+In EL1!
+In EL0!
+Enter el0_main!
+System call return a correct result.
+Exit el0_main!
+```
 
 That's it for this blog, I hope you learn something, if you want me to learn more about other stuff, don't be shy message to me 😛.
