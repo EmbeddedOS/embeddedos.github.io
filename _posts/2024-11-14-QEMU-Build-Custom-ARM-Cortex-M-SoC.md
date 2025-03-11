@@ -10,6 +10,7 @@ tags: [QEMU, SOC, ARM, CORTEX-M]
 image:
   path: assets/img/qemu_logo.jpg
   alt: QEMU.
+published: false
 ---
 
 ## 1. Target machine
