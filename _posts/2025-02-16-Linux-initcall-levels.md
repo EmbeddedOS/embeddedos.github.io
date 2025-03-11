@@ -10,6 +10,7 @@ tags: [Kernel, Booting, initcall, generic init code]
 image:
   path: assets/img/linux_generic_init.png
   alt: linux_generic_init.
+published: false
 ---
 
 ## 1. The Architecture init code
