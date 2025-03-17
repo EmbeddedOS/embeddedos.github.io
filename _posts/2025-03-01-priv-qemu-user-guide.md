@@ -18,7 +18,7 @@ published: false
 
 You can specify multiple devices to your guest with multiple `--device` option.
 
-### 3. Device backend
+### 1.1. Device backend
 
 For serial device wll be backed by a `--chardev`, you can redirect data output to a file or a socket or some other system.
 Storage devices are handled by `--blockdev` which specify how blocks are handled, for example, being stored in a qcow2 file or accessing a raw host disk partition.
@@ -44,6 +44,20 @@ If the firmware was started with `bios` option, the `kernel` option might be ign
 This option normally comes along with `kernel` option, because you are trying to emulate kernel, QEMU will act like a bootloader, and the bootloader also can load both initrd and kernel. It works exactly the way UBoot do: Load `initrd` into RAM and then pass info into kernel via parameters.
 
 ### `device` option
+
+#### Generic Loader
+
+The `loader` device allows the user to load multiple images or values into QEMU at startup. `-device loader,addr=<addr>,data=<data>,data-len=<data-len>[,data-be=<data-be>][,cpu-num=<cpu-num>]`
+An example of loading value 0x8000000e to address 0xfd1a0104 is: `-device loader,addr=0xfd1a0104,data=0x8000000e,data-len=4`
+For example testing TF-A with multiple separated BLx firmware and loaded in different addresses.
+
+```bash
+qemu-system-aarch64 -M virt -cpu cortex-a57 -nographic \
+    -bios build/qemu/release/bl1.bin \
+    -device loader,file=build/qemu/release/bl2.bin,cpu-num=0,addr=0x40010000 \
+    -device loader,file=build/qemu/release/bl31.bin,cpu-num=0,addr=0x40000000 \
+    -device loader,file=u-boot.bin,cpu-num=0,addr=0x42000000
+```
 
 ### `net` option
 
