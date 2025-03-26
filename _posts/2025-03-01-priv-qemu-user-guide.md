@@ -80,4 +80,14 @@ So to access the internet outside (via your host):
 - Configure default gateway to: `10.0.2.2`.
 - Point DNS to: `10.0.2.3`.
 
+## 4. Block devices
+
+- Emulate MMC:
+
+```text
+-device sdhci-pci,sd-spec-version=3 \
+-drive if=none,file=disk.img,format=raw,id=MMC1 \
+-device sd-card,drive=MMC1
+```
+
 ## Debugging
