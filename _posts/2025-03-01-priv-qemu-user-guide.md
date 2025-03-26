@@ -82,12 +82,29 @@ So to access the internet outside (via your host):
 
 ## 4. Block devices
 
+- [UBoot with QEMU](https://docs.u-boot.org/en/latest/board/emulation/blkdev.html)
+
 - Emulate MMC:
 
 ```text
 -device sdhci-pci,sd-spec-version=3 \
 -drive if=none,file=disk.img,format=raw,id=MMC1 \
 -device sd-card,drive=MMC1
+```
+
+- Emulate USB block device:
+
+```text
+-device qemu-xhci \
+-drive if=none,file=disk.img,format=raw,id=USB1 \
+-device usb-storage,drive=USB1
+```
+
+- Emulate virtio:
+
+```text
+-drive if=none,file=disk.img,format=raw,id=VIRTIO1 \
+-device virtio-blk,drive=VIRTIO1
 ```
 
 ## Debugging
