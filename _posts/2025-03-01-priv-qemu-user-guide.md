@@ -10,18 +10,94 @@ tags: [QEMU]
 published: false
 ---
 
+- guest - your running system that is emulated by QEMU.
+- host - your system that you run QEMU on.
+
 ## 1. Device Emulation
 
 - Device frontend -- the way device exposed to the guest.
 - Device buses -- Most devices will exist on a BUS of some sort.
 - Device backend - How the data from emulated device will be processed by QEMU.
 
-You can specify multiple devices to your guest with multiple `--device` option.
+### 1.1. Device frontend
 
-### 1.1. Device backend
+A device front end is how a device is presented to the guest. All devices can be specified with the `--device` option.
+
+Check list all devices supported by the machine: `qemu-system-aarch64 -M virt --device help`. For example:
+
+```bash
+$ qemu-system-aarch64 -M virt --device help
+Controller/Bridge/Hub devices:
+name "pci-bridge", bus PCI, desc "Standard PCI Bridge"
+name "pci-bridge-seat", bus PCI, desc "Standard PCI Bridge (multiseat)"
+...
+
+USB devices:
+name "ich9-usb-ehci1", bus PCI
+name "ich9-usb-ehci2", bus PCI
+mmm
+
+Storage devices:
+
+name "nvme", bus PCI, desc "Non-Volatile Memory Express"
+name "pvscsi", bus PCI
+name "scsi-cd", bus SCSI, desc "virtual SCSI CD-ROM"
+name "scsi-disk", bus SCSI, desc "virtual SCSI disk or CD-ROM (legacy)"
+name "sd-card", bus sd-bus
+name "sdhci-pci", bus PCI
+name "usb-bot", bus usb-bus
+name "usb-storage", bus usb-bus
+```
+
+To check specific device's additional configuration options: `qemu-system-aarch64 -M virt --device foo,help`. For example, a `sd-card` device:
+
+```bash
+$ qemu-system-aarch64 -M virt --device sd-card,help
+sd-card options:
+  drive=<str>            - Node name or ID of a block device to use as a backend
+  spi=<bool>
+  spec_version=<uint8>
+```
+
+### 1.2. Device buses
+
+Most devices will exist on a BUS of some sort. Some buses will be created automatically for each machine.
+
+Normally, the BUS a device is attached to can be inferred, for example, PCI devices are generally automatically allocated to the next free address of first bus found. But you can also specify address (`addr=N`), bus (`bus=ID`) yourself.
+
+Some devices, for example, a PCI SCSI host controller, will add an additional bus to the system that other devices can be attached to. For example, the `bar` device will be attached to the first `foo` bus (`foo.0`) at address 1. The `foo` device which provides that bus itself is attached to the PCU bus `pci.0`,
+
+```bash
+–device foo,bus=pci.0,addr=0,id=foo –device bar,bus=foo.0,addr=1,id=baz
+```
+
+### 1.3. Device backend
 
 For serial device wll be backed by a `--chardev`, you can redirect data output to a file or a socket or some other system.
 Storage devices are handled by `--blockdev` which specify how blocks are handled, for example, being stored in a qcow2 file or accessing a raw host disk partition.
+
+### 1.4. Device use
+
+[Doc](https://github.com/qemu/qemu/blob/master/docs/qdev-device-use.txt)
+
+#### 1.4.1. Block devices
+
+A QEMU block device (drive) has a host and a guest part.
+
+To define the host part, we use `-drive` anf guest device(s) with `-device`.
+
+```bash
+   -drive if=none,id=DRIVE-ID,HOST-OPTS...
+   -device DEVNAME,drive=DRIVE-ID,DEV-OPTS...
+```
+
+- Host options (`HOST-OPTS`): file, format, snapshot, cache, aio, readonly, rerror, werror, etc.
+- Device options (`DEV-OPTS`): serial, etc.
+
+The `-device` argument depends on each type of drive:
+
+- `if=ide`: `-device DEVNAME,drive=DRIVE-ID,bus=IDE-BUS,unit=UNIT`
+- `if=virtio`: `-device virtio-blk-pci,drive=DRIVE-ID,class=C,vectors=V,ioeventfd=IOEVENTFD`
 
 ## 2. QEMU options
 
