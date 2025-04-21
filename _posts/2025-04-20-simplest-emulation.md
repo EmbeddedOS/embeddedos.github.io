@@ -21,6 +21,9 @@ image:
 - Keep the layer as simple as possible.
 - Target platform will be the `qemu-system-aarch64 virt` machine.
 
+> Full source is now available on [Github](https://github.com/EmbeddedOS/arm64_emulation_system).
+{: .prompt-info }
+
 ## 2. Setting up the simplest build system
 
 Normally, to set up a Yocto build system, we clone Poky, as a collection that contains a lot of metadata, recipes, tools, machines, examples, etc. That might not be necessary for every system. So instead of clone full the repo, we take only necessary components:
@@ -171,7 +174,7 @@ do_compile:append:lava-machine() {
 
 Note that, the TFA have no idea about our memory, in our case, QEMU flash memory. QEMU has supported running with a boot rom code image using the `-bios <image>` option. What we do is, an append job after compiling, concatenate `bl1.bin` and `fip.bin` to create the boot ROM `flash.bin` image.
 
-> If you're confusing about Exception Level and how Aarch64 work in the very early stage, I have other blog discuss about writing an [Aarch64 bare metal bootloader](/posts/aarch64-bare-metal-boot-code/).
+> If you're confusing about Exception Level and how Aarch64 work in the very early stage, I have other blog discuss about writing an [Aarch64 bare metal bootloader/posts/aarch64-bare-metal-boot-code/).
 {: .prompt-info }
 
 ### 3.2. U-boot
@@ -397,7 +400,7 @@ Some important configs like `QB_MACHINE`, because we are running at EL3, it's im
 
 ## 6. Running complete system
 
-Full the build system now are available on this repo: [Arm64 emulation build system](https://github.com/EmbeddedOS/arm64_emulation_system)
+Full the build system now are available on this repo: [Arm64 emulation build system](https://github.com/EmbeddedOS/arm64_emulation_system).
 
 In early stage, clone external repos to local:
 
