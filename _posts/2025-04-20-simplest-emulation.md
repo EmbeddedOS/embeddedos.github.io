@@ -1,5 +1,5 @@
 ---
-title: "Build a simplest and complete Aarch64 Linux emulation system with Yocto"
+title: Build a simplest and complete emulation Aarch64 Linux distro with Yocto"
 description: >-
   Using Yocto to build simplest Linux distro for Aarch64 and emulating the system with QEMU.
 
