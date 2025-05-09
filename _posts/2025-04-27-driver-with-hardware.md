@@ -12,15 +12,19 @@ published: false
 
 ## 1. Objective
 
-Understand all the ways kernel communicate with hardware.
+Understand every possible way the kernel communicates with hardware.
 
 ## 2. Hardware identification
 
+As generic as possible, no hard code, reuse kernel but we still need some way to tell kernel about un-discov
+
 ### 2.1. Hardware description
+
+Don't support enumeration.
 
 ### 2.2. dynamically
 
-The Bus drivers detect new devices automatically.
+Peripherals are connected to the processor via a Bus. Some buses have supported device enumration (discovery). The Bus drivers detect new devices automatically.
 
 ## 3. Hardware interaction
 
