@@ -21,9 +21,9 @@ To identify devices, kernel must know about the devices that're connected to it.
 
 ### 2.1. Device descriptions
 
-Every device has its own specification, such as register addresses, interrupt line. Some devices cannot expose their info themselves. Now we have 2 choices to let kernel know about them. The first solution, hardcoding the device's information inside drivers, 
+Every device has its own specification, such as registers, memory addresses, interrupt line. Some devices cannot expose their info themselves to the kernel. So to let kernel notice about those devices, we might have 2 choices. First one is defining the device's information inside drivers, kernel itself. It's easy when develop drivers with hardcoding device information like registers, etc. But this way causes more issues, the kernel become specific, each hardware version, require specific kernel firmware. Every time a device trait changes, the kernel needs to be rebuilt. That brings us to the second choice: Separate the device description outside the kernel. Kernel now becomes more generic, independent with the hardware, and only needs to implement the device description parsers to archive the device information.
 
-To understand the historic reasons, let's get an example, assume that you have 2 similar boards that are only different in some GPIO registers
+Some architectures have their own ways to describe their hardwares. ARM, PowerPC, or embedded devices prefer using DeviceTree, meanwhile, computer systems, like x86, prefer using ACPI table.
 
 #### 2.1.1. DeviceTree
 
@@ -34,6 +34,8 @@ To understand the historic reasons, let's get an example, assume that you have 2
 Peripherals are connected to the processor via a Bus. Some buses have supported device enumeration (discovery). The Bus drivers detect new devices automatically.
 
 ## 3. Hardware interaction
+
+Assume that the kernel identifed its devices, now, how can the kernel communicate with them?
 
 ### 3.1. Memory-mapped I/O
 
