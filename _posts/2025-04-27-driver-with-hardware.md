@@ -27,6 +27,12 @@ Some architectures have their own ways to describe their hardwares. ARM, PowerPC
 
 #### 2.1.1. DeviceTree
 
+DeviceTree is a data structure and language for describing hardware. By that the kernel doesn't need to hard code details of the machine.
+
+The bootloader loads DeviceTree into memory and passes the pointer to the DeviceTree to the Kernel.
+
+A DeviceTree is a tree data structre with nodes that describe the devices in a system. Each node has property/value pairs that describe the characteristics of the device being represented.
+
 #### 2.1.2. ACPI
 
 ### 2.2. Bus enumeration
