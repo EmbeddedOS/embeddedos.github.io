@@ -1,7 +1,7 @@
 ---
 title: "The Linux device driver part I: hardware interaction."
 description: >-
-  Understand possible ways kernel interact with hardware.
+  How kernel identifies and interacts with hardware.
 
 author: Cong
 date: 2025-02-19 00:01:00 +0800
@@ -12,19 +12,24 @@ published: false
 
 ## 1. Objective
 
-Understand every possible way the kernel communicates with hardware.
+- Understand the ways kernel identifies devices: device descriptions and Bus enumerations.
+- Understand the ways kernel interacts with hardware: memory map, interrupt, DMA, etc.
 
-## 2. Hardware identification
+## 2. Hardware identifications
 
-As generic as possible, no hard code, reuse kernel but we still need some way to tell kernel about un-discov
+To identify devices, kernel must know about the devices that're connected to it. Some devices are detected automatically by their bus drivers, e.g., USB, PCU. Kernel uses bus enumeration to detect and identify them. And for those that are completely silent like UART, GPIO, etc. Kernel uses device descriptions to determine them. Let's explore both ways.
 
-### 2.1. Hardware description
+### 2.1. Device descriptions
 
-Don't support enumeration.
+To understand the historic reasons, let's get an example, assume that you have 2 similar boards that are only different in some GPIO registers
 
-### 2.2. dynamically
+#### 2.1.1. DeviceTree
 
-Peripherals are connected to the processor via a Bus. Some buses have supported device enumration (discovery). The Bus drivers detect new devices automatically.
+#### 2.1.2. ACPI
+
+### 2.2. Bus enumeration
+
+Peripherals are connected to the processor via a Bus. Some buses have supported device enumeration (discovery). The Bus drivers detect new devices automatically.
 
 ## 3. Hardware interaction
 
