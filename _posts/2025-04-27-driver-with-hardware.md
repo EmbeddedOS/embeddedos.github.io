@@ -37,7 +37,57 @@ The structure is a tree data structure with nodes that represent devices. Each n
 
 Each node has the name in convention: `node-name@unit-address`. The unit-address is specific to the bus type on which node sits and must match  the first address specified in the `reg` property of the node. The root node has no name or unit-address, it is identified by a forward slash (/).
 
-##### 2.1.1.2. Linux and the DeviceTree
+##### 2.1.1.2. Standard properties
+
+There're set of standard properties for device nodes. Here are some notable ones:
+
+- `compatible` -- consists of one or more strings that define the specific model of the device, this list should be used by kernel for device driver selection.
+- `status` -- Indicates the operational status of a device. The valid values: `okay`, `disabled`, `reserved`, `fail`, and `fail-sss`.
+- `#address-cells` -- used in nodes that has children to indicate number of cells used to encode the address in `reg`.
+- `#size-cells` -- used in nodes that has children to indicate number of cells used to encode the size in `reg`.
+- `reg` -- The address of the device's resources within the address space defined by its parent bus. Most commonly indicates the offsets and lengths of memory-mapped IO register blocks.
+
+For example:
+
+```text
+soc { 
+  compatible = "simple-bus";
+  #address-cells = <1>;
+  #size-cells = <1>;
+  ranges = <0x0 0xe0000000 0x00100000>;
+  serial@4600 {
+    device_type = "serial";
+    compatible = "ns16550";
+    reg = <0x4600 0x100 0x8600 0x100>;
+    clock-frequency = <0>;
+    interrupts = <0xA 0x8>;
+    interrupt-parent = <&ipic>; 
+  }; 
+};
+```
+
+The `#address-cells = <1>` indicates one address for a cell and `#size-cells = <1>` indicates one length for a cell. And the `reg` contains 2 cells `0x4600 0x100` and `0x8600 0x100`. Another example:
+
+
+```text
+soc { 
+  #address-cells = <2>;
+  #size-cells = <1>;
+  serial@4600 {
+    reg = <0x00000000 0x00000001 0x10000>;
+  }; 
+};
+```
+
+The `reg` contains one cell, each cell contains 2 addresses, in this case `0x00000000 0x00000001` and 1 size, in this case `0x10000`.
+
+##### 2.1.1.3. Interrupts
+
+##### 2.1.1.4. Base node types
+
+##### 2.1.1.5. Flattened DeviceTree (DTB) format
+
+##### 2.1.1.6. Linux and the DeviceTree
 
 #### 2.1.2. ACPI
 
