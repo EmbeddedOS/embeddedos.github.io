@@ -27,11 +27,17 @@ Some architectures have their own ways to describe their hardwares. ARM, PowerPC
 
 #### 2.1.1. DeviceTree
 
-DeviceTree is a data structure and language for describing hardware. By that the kernel doesn't need to hard code details of the machine.
+DeviceTree is a data structure and language for describing hardware. By that the kernel doesn't need to hard code details of the machine. The bootloader loads DeviceTree into memory and passes the pointer to the DeviceTree to the Kernel.
 
-The bootloader loads DeviceTree into memory and passes the pointer to the DeviceTree to the Kernel.
+##### 2.1.1.1. Specification
 
-A DeviceTree is a tree data structre with nodes that describe the devices in a system. Each node has property/value pairs that describe the characteristics of the device being represented.
+The structure is a tree data structure with nodes that represent devices. Each node has name and property/value pairs that describe the characteristics of the device. Take a look to a simple example that nearly complete enough to boot a simple OS, with the platform type, CPU, memory and a single UART:
+
+![DeviceTree Example](assets/img/devicetree_example.png)
+
+Each node has the name in convention: `node-name@unit-address`. The unit-address is specific to the bus type on which node sits and must match  the first address specified in the `reg` property of the node. The root node has no name or unit-address, it is identified by a forward slash (/).
+
+##### 2.1.1.2. Linux and the DeviceTree
 
 #### 2.1.2. ACPI
 
@@ -41,7 +47,7 @@ Peripherals are connected to the processor via a Bus. Some buses have supported 
 
 ## 3. Hardware interaction
 
-Assume that the kernel identifed its devices, now, how can the kernel communicate with them?
+Assume that the kernel identified its devices, now, how can the kernel communicate with them?
 
 ### 3.1. Memory-mapped I/O
 
@@ -52,5 +58,3 @@ Assume that the kernel identifed its devices, now, how can the kernel communicat
 ### 3.4. Polling
 
 ### 3.5. DMA
-
-### 3.6. 
