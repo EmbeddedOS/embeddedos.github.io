@@ -83,9 +83,40 @@ The `reg` contains one cell, each cell contains 2 addresses, in this case `0x000
 
 ##### 2.1.1.3. Interrupts
 
-##### 2.1.1.4. Base node types
+##### 2.1.1.4. Base device node types
+
+All DeviceTree have a root node, and the root includes at least 2 children:
+
+- One `/cpus` node.
+- At least one `/memory` node.
+
+Other nodes are optional. Let's see some basic ones:
+
+- `/aliases` -- Define one or more alias properties. For example: `serial0 = "/simple-bus@fe000000/serial@llc500";`.
+- `/memory` -- Describes the physical memory layout for the system. If a system has multiple ranges of memory, multiple memory nodes can be created, or the ranges can be specified in the `reg` property of a single memory node.
+- `/chosen` -- does not represent a real device in the system but describes parameters chosen or specified by the system firmware at runtime. For example, kernel boot arguments: `bootargs = "root=/dev/nfs rw nfsroot=192.168.1.1 console=ttyS0,115200";`
+- `/cpus/cpu*` -- Represents a hardware execution block that is sufficiently independent that it is capable of running OS.
 
 ##### 2.1.1.5. Flattened DeviceTree (DTB) format
+
+![DeviceTree DTB Structure](assets/img/devicetree_dtb_structure.png)
+
+The Device Tree header fields:
+
+```c
+struct fdt_header { 
+  uint32_t magic;
+  uint32_t totalsize;
+  uint32_t off_dt_struct;
+  uint32_t off_dt_strings;
+  uint32_t off_mem_rsvmap;
+  uint32_t version;
+  uint32_t last_comp_version;
+  uint32_t boot_cpuid_phys;
+  uint32_t size_dt_strings;
+  uint32_t size_dt_struct;
+};
+```
 
 ##### 2.1.1.6. Linux and the DeviceTree
 
