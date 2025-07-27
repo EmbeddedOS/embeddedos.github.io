@@ -72,7 +72,7 @@ The PE/COFF image might look like this:
 
 ## 2. Linux kernel image formats
 
-Linux kernel image might have different format for each architecture. The format, normally, is just a binary image containing machine code for the target architecture. It's kind of statically linked executable, once loaded onto the memory, it should be able to execute without any helper. This is because the is no OS running before the kernel to check and link dependencies. Once the kernel running, it can load other modules itself.
+Linux kernel image might have different format for each architecture. The format, normally, is just a binary image containing machine code for the target architecture. It's kind of statically linked executable, once loaded onto the memory, it should be able to execute without any helper. This is because there is no OS running before the kernel to check and link dependencies. Once the kernel running, it can load other modules itself.
 
 The bootloader (any software that runs before kernel) is not supposed to do complex tasks. Depending on the architecture, they can do more specific tasks, but the main tasks should be:
 
@@ -202,7 +202,7 @@ AArch32 bootable image formats:
 - `xipImage` - XIP Kernel image.
 - `bootpImage` - Combined zImage and initial RAM disk.
 
-> The self-extracting image is a image that has special headers that contain decompression code. The bootloader read the image header to understand the compression method and decompression instructions. The bootloader then executes the decompression code which will decompress kernel directly into memory.
+> The self-extracting image is an image that has special headers that contain decompression code. The bootloader read the image header to understand the compression method and decompression instructions. The bootloader then executes the decompression code which will decompress kernel directly into memory.
 {: .prompt-info }
 
 ### 2.3. x86
