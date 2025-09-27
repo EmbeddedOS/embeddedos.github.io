@@ -15,16 +15,38 @@ published: false
 
 ## 1. Let's talk efficiency
 
-In software development, using qualitative words is not always a good choice. Sayings such as *it's awesome, I promise it will run very fast*, *it's very efficient and stable, high performance*, etc. That sounds good, but in the end, what does that actually mean? or how we prove that? Your customers, recruiters, or managers can't count on those things to decide to buy your products, hiring, or promote you. They need the real things! and that is the target of this article.
+In software development, using qualitative words is not always a good choice. Sayings such as *it's awesome, I promise it will run very fast*, *it's very efficient and stable, high performance*, etc. That sounds good, but in the end, what does that actually mean? or how we prove that? Your customers, recruiters, or managers can't count on those things to decide to buy your products, hiring, or promote you. Remember the XYZ format in resume writing, what we got: Accomplished [X] as measured by [Y] by doing [Z] Format. They need the real things! the thing that they can measure and compare to others and that is the target of this article.
 
-By measuring your programs, you do know is this actually effective? does your program run fast, and the most important your effort can be count! for example, now you can report to your boss, *hey men, I do optimize my function and it run faster 40%!* Big change, right?
+By measuring your programs, you do know is this actually effective? does your program run fast, and the most important your effort can be count! for example, now you can report to your boss, *hey men, I do optimize functions and now our business run faster 20%!* Big change, right? OK, let's go to the main topic.
 
-- performance efficiency.
-- resource efficiency.
+There are two categories of efficiency that can be measured in software development: *performance* and *resource*.
+
+### 1.1. Performance efficiency
+
+The performance 
+
+- Latency
+- Throughput
+- Scalability
+
+At system level:
+
+- Kernel interaction: syscall rates, page faults, interrupts.
+- context switching cost.
+
+### 1.2. Resource efficiency
+
+- CPU.
+- Memory.
+- I/O.
+- Network, bandwidth usage.
+- Energy.
+
 
 ## 2. Evaluating methods 
 
-- logging - tracing.
-- measuring.
-- observing.
-- testing.
+- logging - tracing -> maintainability.
+- measuring -> efficiency.
+  - Micro benchmarking.
+- observing -> observability.
+- testing -> stability.
