@@ -45,8 +45,8 @@ At system level:
 
 ## 2. Evaluating methods 
 
-- logging - tracing -> maintainability.
+- logging -> basic element, export the info you measuring in an effective way, maintainability.
 - measuring -> efficiency.
   - Micro benchmarking.
-- observing -> observability.
+- observing, tracing -> observability.
 - testing -> stability.
