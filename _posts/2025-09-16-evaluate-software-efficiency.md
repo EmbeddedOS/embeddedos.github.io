@@ -6,7 +6,7 @@ description: >-
 author: Cong
 date: 2025-09-16 00:01:00 +0800
 categories: [low-latency, observability]
-tags: [Low Latency, OOP, observability]
+tags: [low latency, oop, observability]
 image:
   path: assets/img/rootfs.jpeg
   alt: evaluate-sw-overview.
