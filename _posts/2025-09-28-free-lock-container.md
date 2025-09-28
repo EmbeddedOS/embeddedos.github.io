@@ -13,4 +13,12 @@ image:
 published: true
 ---
 
-## 1. Lock free concurrent data structures
+## 1. Lock based concurrent data structures
+
+
+
+## 2. Lock free pros and consequences
+
+## 3. atomic operations
+
+## 4. lock free containers
