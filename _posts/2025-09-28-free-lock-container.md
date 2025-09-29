@@ -74,9 +74,22 @@ By using mutexes, we ensure multiple threads can safely access a data structure 
 
 ## 2. Lock free concurrent data structures
 
-In the previous sections we learned lock-based data structure can be blocking. But 
+Data structure is called as lock-free when more than one thread must be able to access the data structure concurrently. They don't have to do the same operation, for example, one thread can push and other can pop at the same time. But if two threads try to do the same, one will be break and need to retry.
 
 ## 3. atomic operations
+
+An *atomic operation* is an indivisible operation. There is no operation like half-done; it's either done or not done.
+
+In C++, we need to use `std::atomic` type to get an atomic operation. Standard atomic types are not copyable or assignable. We can do assignment and implicit conversation to the corresponding built-in types as well as direct `load()`, `store()`, `exchange()`, `compare_exchange_weak()`, `compare_exchange_strong()`. We can also use assignment operators: `+=`, `-=`, `*=`, `|=`, etc. And `++`, `--` for integral atomic types. The value return from an assignment either the new value (done) or the prior value before the operation (not done).
+
+The atomic operations can be divided into three categories:
+
+1. Store operations.
+2. Load operations.
+3. Read-modify-write operations.
+
+
+
 
 - Compare and Swap (CAS).
 - Fetch and Add.
