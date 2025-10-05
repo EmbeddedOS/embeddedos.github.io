@@ -102,12 +102,12 @@ void func(int &x, int&y)
 Now the compiler can't reorder statements due to the dependency of `x` in `y`. But when the CPU executes generated instructions, it can execute in different orders. One of the popular is called [out of order execution](https://en.wikipedia.org/wiki/Out-of-order_execution), in short, the CPU may execute loads/stores/ALU operations out of order to improve performance. For example:
 
 ```nasm
-mov    eax, [var1]  ; [1]: load variable var1 into reg eax
-inc    eax          ; [2]: eax += 1
-mov    [var1], eax  ; [3]: store reg eax into var1
-xor    ecx, ecx     ; [4]: ecx = 0
-inc    ecx          ; [5]: ecx += 1
-add    eax, ecx     ; [6]: eax = eax + ecx
+mov    eax, [var1]  ; [1]: load variable var1 into reg eax
+inc    eax          ; [2]: eax += 1
+mov    [var1], eax  ; [3]: store reg eax into var1
+xor    ecx, ecx     ; [4]: ecx = 0
+inc    ecx          ; [5]: ecx += 1
+add    eax, ecx     ; [6]: eax = eax + ecx
 ```
 
 The CPU can do step `[1]` to load the `var1`, while loading, it could issue some of the later instructions such as `[4]` and `5` too to set the `ecx`. Once step `[1]` is ready `[2]`, `[3]` and finally `[6]` will be executed. So the CPU only issues a load operation, doesn't wait, and do other task, that can avoid idling state and maximize the performance.

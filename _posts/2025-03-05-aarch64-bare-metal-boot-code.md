@@ -8,7 +8,7 @@ date: 2025-03-05 00:01:00 +0800
 categories: [bootloader]
 tags: [aarch64, exception level, bare metal, qemu, gdb, svc]
 published: true
-pin: true
+pin: false
 image:
   path: assets/img/aarch64_bare_metal_boot_code.png
   alt: AArch64 bare metal boot code.
