@@ -13,7 +13,7 @@ image:
 published: true
 ---
 
-## Memory model
+## 1. Memory model
 
 All data in c++ is made up by *objects*. The C++ standards defines an object as *a region of storage*, so whatever the object type, it's stored at one or more memory locations. Let's visualize an object into memory view.
 
@@ -69,7 +69,7 @@ Meanwhile virtual methods require extra memory to look at the V-Table at runtime
 └──────────────────────────────────┘
 ```
 
-## Memory access order
+## 2. Memory access order
 
 Objects are actually memory regions, so when we access the objects, we actually access memory locations. In that case, we can either do read (load) or write (store) memory. But what is the actually order those memory region can be accessed? there are some point of view about orders:
 
@@ -114,4 +114,45 @@ The CPU can do step `[1]` to load the `var1`, while loading, it could issue some
 
 Those examples prove one point that the code we write can be different with the final instructions executing by the CPU. The CPU, compilers were free to reorder, cache, or optimize variables without any rules about multithreading. That's totally fine — because to your single thread, results are the same. The problems come out when we start working in multithreading, there's no general rules for compilers or CPUs to do that, and neither of them know about different threads. And we need to tell them, that's actually what C++ 11 provide: atomic operations and locking.
 
-## Memory model in C++11
+## 3. Memory model since C++11
+
+So far as we know, everything hinges on memory locations. If multithread access to the same location, and at least one try to modify, there's a potential of race condition. To avoid that, *there has to be an enforced ordering between the accesses in the threads*. For example, there could be a fixed order, where one thread always run first, or whatever, just make sure there is some defined ordering.
+
+One way to guarantee the order is locking with mutexes. When two threads try to lock the same mutex, one will be blocked until the other unlock it. So we can do the memory access while the mutex is locking without worrying about other's access.
+
+The other way is to use synchronization properties of atomic operations, either on same or different memory region, accessing to those regions is enforced an ordering.
+
+### 3.1. Atomic operations in compiler and CPU perspectives
+
+In multithread environment, if the object isn't a atomic type, you are responsible for making sure that there's a sufficient synchronization to guarantee that threads are agree on the modification order of each variable. But if you do use atomic operations, the compiler is responsible for ensuring the right synchronization is in place. Let's take a look at this example, to see how the compiler treats a atomic variable compare with a normal variable.
+
+```text
+    Coder view                      Compiler assembler view
+┌────────────────────┐
+│ int counter = 0;   │      ┌─────────────────────────────────┐
+│ f() {              │=====>│ mov eax, [counter]              │
+│    counter++;      │      │ add eax, 1                      │
+│ };                 │      │ mov [counter], eax              │
+└────────────────────┘      └─────────────────────────────────┘
+```
+
+The compiler sees no synchronization and might assume that, only that single thread access this variable, it can be kept in a register and even can do some reorder load/store to make the code more efficient. Now let's see how it assembles an atomic variable (in a x86 machine):
+
+```text
+    Coder view                      Compiler assembler view
+┌─────────────────────────┐
+│ std::atomic<int> = 0;   │      ┌─────────────────────────────────┐
+│ f() {                   │=====>│ lock add dword ptr [counter], 1 │
+│    counter++;           │      └─────────────────────────────────┘
+│ };                      │
+└─────────────────────────┘
+```
+
+The `lock` prefix tell the CPU: *This instruction must be atomic across all cores and flush necessary store buffers*. Now the responsible is pushed to the CPU and hardware to guarantee no interleaving from other thread. The C++ memory model defines an abstract machine layer to archive independence from any specific CPU, but the feature might not always available on every CPU. And the memory accessing order rules are dependent on the machine too, some might very strictly compare with other. But because it's actually taken care by C++ hardware abstraction layer, this blog will not dig into features of each machine architecture. In a application view, C++ provides us some kind of memory order that we will dive deep into in the few next sections.
+
+### 3.2. C++ atomic standard library
+
+### 3.3. Memory modification order with `std::memory_order`
+
+
+## 4. Bonus: Atomic for user-defined types
