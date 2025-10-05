@@ -1,10 +1,10 @@
 ---
 title: "Low latency programming: Memory model and atomic operations."
 description: >-
-  
+  The most important feature in modern C++: new awareness multithreading memory model.
 
 author: Cong
-date: 2025-09-16 00:01:00 +0800
+date: 2025-10-04 00:01:00 +0800
 categories: [low-latency, memory-model]
 tags: [low-latency, oop, memory-model, atomic, cpp]
 image:
