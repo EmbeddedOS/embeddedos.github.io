@@ -152,7 +152,74 @@ The `lock` prefix tell the CPU: *This instruction must be atomic across all core
 
 ### 3.2. C++ atomic standard library
 
-### 3.3. Memory modification order with `std::memory_order`
+The `std::atomic<>` class template provide a subset of atomic operations. Atomic types are not copyable or assignable. However they support assignment from and implicit conversion to corresponding built in types. There are three types of operations:
 
+- Load operations.
+- Store operations.
+- Read-modify-write operations.
+
+You can either do it by using methods: `load()`, `store()`, `exchange()`, `fetch_add()`, `fetch_or()`, `compare_exchange_weak()`, `compare_exchange_strong()` or compound assignment operators: `+=`, `-=`, `++`, `--`, etc. if appropriate. There is no different between them, except with methods, you can specify the memory order you want to enforce the compiler too.
+
+### 3.3. Storing a new value (or not) depending on the current value
+
+Sometimes you want to check the atomic value as a condition to decide what to do with it. For example:
+
+```cpp
+std::atomic<int> x = 0;
+
+void func(int y)
+{
+  if (x == 0)
+  {
+    // Do something.
+    x += y;
+  }
+}
+```
+
+The problem with this code is, even if working on the `x` variable is safe, but the logic can be wrong. Multithread can run over the `if` condition with `x = 0`, and the `x` can be added multiple times with `y`. To avoid that situation, the compare and swap (known as CAS) operations can be used, and in C++, we can do by using `compare_exchange_*(expected, desired)` methods.
+
+Both `compare_exchange_weak()` and `compare_exchange_strong()` do compare the atomic value with a expected value and
+stores the supplied desired value if they are equal. If the operation fail due to not equal, the expected value is loaded as the atomic current value. The different is that `compare_exchange_weak()` storing can be false even if the expected value is equal. That normally due to lacking single instruction of the architecture to do CAS, and the CPU can not guarantee the operation is atomic (for example, thread context switch inside CAS operation), in that case the atomic value is kept as original. So it should be used in a loop:
+
+```cpp
+bool expected=false;
+extern atomic<bool> b;
+
+while(!b.compare_exchange_weak(expected,true) && !expected);
+```
+
+The `compare_exchange_strong()` actually contains a loop inside itself.
+
+### 3.4. Enforcing ordering
+
+Before understand how the atomic operations can enforce memory access order, let's define the memory model relations: *happens before* and *synchronize with* relationships.
+
+```cpp
+int data = 0;
+std::atomic<bool> data_ready(false);
+
+void reader_thread()
+{
+  while(!data_ready.load()) // <-- [1]
+  {
+    std::this_thread::sleep(std::chrono::milliseconds(1));
+  }
+
+  std::cout << "Data: " << data << "\n"; // <-- [2]
+}
+
+void writer_thread()
+{
+  data = 10;  // <-- [3]
+  data_ready.store(true);  // <-- [4]
+}
+```
+
+The write of the `data` in `[3]` *happens before* the write to the flag `data_ready` in [4]. And the read of the flag `data_ready` in `[1]` *happens before* the read of the `data` in `[2]`. When the read of the flag  `data_ready` in [1] is `true`, and now the write in `[4]` actually *synchronize with* the read in `[1]`. In short, `[3]` happens before `[4]`, `4` happens before `[1]`, `[1]` happens before `[2]`. By this *happen before* relationship we have an enforced ordering: the write of the data happens before the read of data.
+
+That works fine, and that actually is the default behavior of memory ordering of atomic operations: Sequential consistency or you can specify it explicit by using `std::memory_order_seq_cst`. This guarantees the execution order of a program in the way you wrote it. So why we need other types of memory ordering? well, everything comes at a price, the `std::memory_order_seq_cst` is the safest but take the most cost, and sometimes we don't need to protect the whole memory barrier around the atomic operations.
 
 ## 4. Bonus: Atomic for user-defined types
+
+## 5. Bonus: new C standard
