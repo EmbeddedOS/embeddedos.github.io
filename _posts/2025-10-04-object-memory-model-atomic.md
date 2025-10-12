@@ -218,13 +218,24 @@ void writer_thread()
 
 The write of the `data` in `[3]` *happens before* the write to the flag `data_ready` in [4]. And the read of the flag `data_ready` in `[1]` *happens before* the read of the `data` in `[2]`. When the read of the flag  `data_ready` in [1] is `true`, and now the write in `[4]` actually *synchronize with* the read in `[1]`. In short, `[3]` happens before `[4]`, `4` happens before `[1]`, `[1]` happens before `[2]`. By this *happen before* relationship we have an enforced ordering: the write of the data happens before the read of data.
 
-That works fine, and that actually is the default behavior of memory ordering of atomic operations: **Sequential consistency** or you can specify it explicit by using `std::memory_order_seq_cst`. This guarantees the execution order of a program in the way you wrote it. So why we need other types of memory ordering? well, everything comes at a price, the `std::memory_order_seq_cst` is the safest but take the most cost, and sometimes we don't need to protect the whole memory barrier around the atomic operations.
+That works fine, and that actually is the default behavior of memory ordering of atomic operations: **Sequential consistency** or you can specify it explicit by using `std::memory_order_seq_cst`. This guarantees the execution order of a program in the way you wrote it. So why we need other types of memory ordering? well, everything comes at a price, the `std::memory_order_seq_cst` is the safest but take the highest cost, and sometimes we don't need to protect the whole memory barrier around the atomic operations.
+
+
+```text
+// Do we always need this part finishing before we perform the atomic operation?
+    /\            /\           /\
+----------Before memory barrier----------
+lock add dword ptr [counter], 1  // Atomic operation.
+----------After memory barrier-----------
+    \/            \/           \/
+// Do we always need this part have to run only after we finish the atomic operation?
+```
 
 #### 3.4.1. Acquire - release ordering
 
 #### 3.4.2. Relaxing memory ordering
 
-This is the simplest form with lowest cost. You don't care about the ordering around the memory barrier of the atomic operations. For example, a single object like statistic, counter, etc. You just care about the object, that's it. Compiler can reorder memory around for efficiency.
+This is the simplest form with lowest cost. You don't care about the ordering in both side of the memory barrier of the atomic operations. For example, a single object like statistic, counter, etc. You just care about the object, that's it. Compiler can reorder memory around for efficiency.
 
 ```cpp
 
@@ -243,7 +254,7 @@ void func()
 }
 ```
 
-The compiler are free to optimize the code around the atomic operation:
+The compiler are free to optimize the code around the atomic operation, the CPU are free too run instruction too. For example, it could be:
 
 ```cpp
 x += 3;
@@ -256,11 +267,13 @@ y += 30;
 Atomic operations can be treated as a memory boundary by the compiler. The memory barriers before and after the atomic operations can be treated differently based on the ordering type.
 
 ```text
+// Do we need this part finishing before we perform the atomic operation?
     /\            /\           /\
 ----------Before memory barrier----------
 lock add dword ptr [counter], 1
 ----------After memory barrier-----------
     \/            \/           \/
+// Do we need this part have to run only after we finish the atomic operation?
 ```
 
 So let's summarize how memory ordering types decide what compiler and CPU do:
