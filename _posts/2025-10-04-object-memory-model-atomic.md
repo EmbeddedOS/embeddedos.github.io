@@ -232,11 +232,23 @@ std::atomic<int> total_events = 0;
 
 void func()
 {
+  
   // Other logics are not my business.
-   total_events.fetch_add(1, std::memory_order_relaxed);
+  x += 1;
+  y += 10;
+  total_events.fetch_add(1, std::memory_order_relaxed);
   // Other logics are not my business.
+  x += 2;
+  y += 20;
 }
+```
 
+The compiler are free to optimize the code around the atomic operation:
+
+```cpp
+x += 3;
+total_events.fetch_add(1, std::memory_order_relaxed);
+y += 30;
 ```
 
 #### 3.4.3. Summary
@@ -244,20 +256,15 @@ void func()
 Atomic operations can be treated as a memory boundary by the compiler. The memory barriers before and after the atomic operations can be treated differently based on the ordering type.
 
 ```text
-
-                  /\
-                  ||
+    /\            /\           /\
 ----------Before memory barrier----------
 lock add dword ptr [counter], 1
 ----------After memory barrier-----------
-                  ||
-                  \/
-
+    \/            \/           \/
 ```
 
 So let's summarize how memory ordering types decide what compiler and CPU do:
 
-```text
 | Memory order | Prevents reordering **before → after** | Prevents reordering **after → before** | Typical compiler barrier inserted           |
 | ------------ | -------------------------------------- | -------------------------------------- | ------------------------------------------- |
 | `relaxed`    | ❌                                     | ❌                                    | none                                        |
@@ -266,7 +273,6 @@ So let's summarize how memory ordering types decide what compiler and CPU do:
 | `acq_rel`    | ✅                                     | ✅                                    | full fence around op                        |
 | `seq_cst`    | ✅                                     | ✅                                    | strongest fence (full compiler + CPU fence) |
 
-```
 
 ## 4. Bonus: Atomic for user-defined types
 
