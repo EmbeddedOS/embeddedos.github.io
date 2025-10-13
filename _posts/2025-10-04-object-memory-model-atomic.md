@@ -233,6 +233,43 @@ lock add dword ptr [counter], 1  // Atomic operation.
 
 #### 3.4.1. Acquire - release ordering
 
+Back to the previous example, there are 2 atomic operations:
+
+- `[1]` `data_ready.load()` that load the atomic value and then do some thing.
+- `[4]` `data_ready.store(true);` the do some thing and the store the atomic value.
+
+In the first case `[1]` we don't care what happen before, that is where acquire ordering useful. We only need instructions after the atomic operation must be executed after the atomic operation, compiler, CPU are not allowed to reorder them to before the operation. For example:
+
+```cpp
+data += 10;
+data_ready.load(std::memory_order_acquire);
+data += 20;
+```
+
+Are the compiler or CPU is able to reorder like:
+
+```cpp
+// data += 30; Can not re order to here.
+data_ready.load(std::memory_order_acquire);
+data += 30;
+```
+
+Similarly, in the `[4]` case we only need to ensure instructions before the store operations should be done first. For example:
+
+```cpp
+data += 10;
+data_ready.load(std::memory_order_release);
+data += 20;
+```
+
+Are the compiler, CPU are able to reorder like:
+
+```cpp
+data += 30;
+data_ready.load(std::memory_order_release);
+// data += 30; Can not re order to here.
+```
+
 #### 3.4.2. Relaxing memory ordering
 
 This is the simplest form with lowest cost. You don't care about the ordering in both side of the memory barrier of the atomic operations. For example, a single object like statistic, counter, etc. You just care about the object, that's it. Compiler can reorder memory around for efficiency.
@@ -267,16 +304,12 @@ y += 30;
 Atomic operations can be treated as a memory boundary by the compiler. The memory barriers before and after the atomic operations can be treated differently based on the ordering type.
 
 ```text
-// Do we need this part finishing before we perform the atomic operation?
     /\            /\           /\
 ----------Before memory barrier----------
 lock add dword ptr [counter], 1
 ----------After memory barrier-----------
     \/            \/           \/
-// Do we need this part have to run only after we finish the atomic operation?
 ```
-
-So let's summarize how memory ordering types decide what compiler and CPU do:
 
 | Memory order | Prevents reordering **before → after** | Prevents reordering **after → before** | Typical compiler barrier inserted           |
 | ------------ | -------------------------------------- | -------------------------------------- | ------------------------------------------- |
@@ -286,7 +319,10 @@ So let's summarize how memory ordering types decide what compiler and CPU do:
 | `acq_rel`    | ✅                                     | ✅                                    | full fence around op                        |
 | `seq_cst`    | ✅                                     | ✅                                    | strongest fence (full compiler + CPU fence) |
 
-
 ## 4. Bonus: Atomic for user-defined types
 
+The atomic type `std::atomic<T>` is only work for types `T` that are trivially copyable (a type is considered as trivially copyable if its value can be copied simply by copying their underlying bytes, similar to how `std::memcpy` operates). That means no move, copy constructors, assignments, no virtual methods, destructor, etc. A type can be check as trivially copyable or not with `std::is_trivially_copyable_v<T>`.
+
 ## 5. Bonus: new C standard
+
+C11 has introduced mechanisms to perform atomic operations and memory model under `stdatomic.h` header.
