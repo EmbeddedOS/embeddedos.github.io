@@ -29,9 +29,100 @@ eBPF bytecode consists of a set of instrctions, and those instructions act on eB
 
 ### `bpf()` system call
 
-### The JIT compiler
+```c
+SYSCALL_DEFINE3(bpf, int, cmd, union bpf_attr __user *, uattr, unsigned int, size)
+{
+	return __sys_bpf(cmd, USER_BPFPTR(uattr), size);
+}
 
-### The verifier
+static int __sys_bpf(enum bpf_cmd cmd, bpfptr_t uattr, unsigned int size)
+{
+	/**/
+	err = security_bpf(cmd, &attr, size, uattr.is_kernel);
+	if (err < 0)
+		return err;
+
+	switch (cmd) {
+	case BPF_MAP_CREATE:
+		err = map_create(&attr, uattr);
+		break;
+	case BPF_PROG_LOAD:
+		err = bpf_prog_load(&attr, uattr, size);
+		break;
+	case BPF_PROG_ATTACH:
+		err = bpf_prog_attach(&attr);
+		break;
+	case BPF_PROG_DETACH:
+		err = bpf_prog_detach(&attr);
+		break;
+	default:
+		err = -EINVAL;
+		break;
+	}
+
+	return err;
+}
+```
+
+#### Load a program
+
+```c
+static int bpf_prog_load(union bpf_attr *attr, bpfptr_t uattr, u32 uattr_size)
+{
+	/* ... */
+	err = security_bpf_prog_load(prog, attr, token, uattr.is_kernel);
+	if (err)
+		goto free_prog_sec;
+
+	/* run eBPF verifier */
+	err = bpf_check(&prog, attr, uattr, uattr_size);
+	if (err < 0)
+		goto free_used_maps;
+
+	prog = bpf_prog_select_runtime(prog, &err);
+	if (err < 0)
+		goto free_used_maps;
+
+	/* ... */
+}
+```
+
+function `bpf_prog_select_runtime()` select exec runtime for the BPF program. It tries to JIT the program first, if not available, use interpreter. The JIT code is a part of architecture code since each arch require different way to translate eBPF bytecode to machine native code.
+
+```c
+struct bpf_prog *bpf_prog_select_runtime(struct bpf_prog *fp, int *err)
+{
+	/* ... */
+
+	/* eBPF JITs can rewrite the program in case constant
+	 * blinding is active. However, in case of error during
+	 * blinding, bpf_int_jit_compile() must always return a
+	 * valid program, which in this case would simply not
+	 * be JITed, but falls back to the interpreter.
+	 */
+	if (!bpf_prog_is_offloaded(fp->aux)) {
+		*err = bpf_prog_alloc_jited_linfo(fp);
+		if (*err)
+			return fp;
+
+		fp = bpf_int_jit_compile(fp);
+		bpf_prog_jit_attempt_done(fp);
+		if (!fp->jited && jit_needed) {
+			*err = -ENOTSUPP;
+			return fp;
+		}
+	} else {
+		*err = bpf_prog_offload_compile(fp);
+		if (*err)
+			return fp;
+	}
+
+	/* ... */
+}
+```
+
+The `bpf_int_jit_compile()` variants are defined at `arch/<arch>/net/bpf_jit*.c`.
+
 
 ### Attach to an event
 
