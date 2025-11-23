@@ -10,7 +10,7 @@ tags: [linux, kernel, debug, performance, kprobe, kretprobe]
 image:
   path: assets/img/invisible_process.png
   alt: invisible process
-published: false
+published: true
 ---
 
 ## Kernel probes and return probes
