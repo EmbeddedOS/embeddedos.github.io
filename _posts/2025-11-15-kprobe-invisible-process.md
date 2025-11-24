@@ -1,12 +1,12 @@
 ---
-title: "Kernel hacking: Hiding processes with kprobes"
+title: "Hiding processes from the OS with Kprobes"
 description: >-
-  Debugging, performance analysis, attach into any kernel routines with kernel probes.
+  Using Kprobes to make processes completely invisible, unkillable from the OS.
 
 author: Cong
 date: 2025-11-15 00:01:00 +0800
 categories: [kernel, probe]
-tags: [linux, kernel, debug, performance, kprobe, kretprobe]
+tags: [linux, kernel, invisible, unkillable, process, proc, kprobe, kretprobe]
 image:
   path: assets/img/invisible_process.png
   alt: invisible process
