@@ -13,13 +13,17 @@ image:
 published: true
 ---
 
-## Kernel probes and return probes
+## An introduction to kprobes
 
-Kprobes enables you to dynamically break into any kernel routine, collect information non-disruptively. You can trap at almost any kernel code address, specifying a handler routine to be invoked when the break point is hit.
+Kprobes (Kernel probes) is a mechanism that allows you to insert probes (breakpoints) at almost any instructions in the kernel and executes custom handler routines when those probes are hit.
 
-There are two types of probes:
+How does it work? when a kprobe is registered, Kprobes make a copy of the probed instruction and replace the first byte(s) with breakpoint instructions. When the CPU hits the breakpoint instruction, a trap occurs, CPU's registers are saved and the control passes to Kprobes.
 
-1. kprobes - can be inserted on virtually any instruction in the kernel.
-2. kretprobes - return probe fires when a specified function returns.
+ Kprobes executes the *pre_handler* associated with the kprobe, passing the handler the addresses of the `kprobe struct` and the saved registers.
 
-## How does it work?
+ Next, Kprobes single-steps its copy of the probed instruction.
+
+ After the instruction is single-stepped, Kprobes executes the *post_handler*, if any, that is associated with the kprobe. Execution then continues with the instruction following the probepoint.
+
+## Kprobes changing execution path
+
