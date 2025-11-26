@@ -30,7 +30,22 @@ Image here.
 
 Since Kprobes can probe into kernel running code, it can change the register set, even instruction pointer `pc` register. One note if you do that, you should return non zero value from the *pre_handler*, so Kprobes will bypass the single step and just return to the given address.
 
-## How a process is managed in user space?
+## How a process information is exposed in user space?
+
+Process information is primarily exposed to user space via a virtual file system called procfs and mounted at `/proc` (by default). Procfs provides a dynamic interface to kernel data structure to get system information or change kernel parameters (you can change kernel parameters at runtime (or we called tuning) by using `sysctl` via this interface but this is not what we're gonna discuss in this blog).
+
+The process information details are under the dynamic folder `/proc/[pid]`:
+
+- cmdline: The command-line arguments used to start the process.
+- status: Detailed status information about the process.
+- exe: A symbolic link to the executable file of the process.
+- cwd: A symbolic link to the current working directory of the process.
+
+User space tools such as `ps`, `top`, `free` check for this virtual fs and get system + processes information.
+
+We call procfs as virtual since it's not actually existing on the hard disk. Every time you use system call to access them kernel redirect it to different part with normal regular directories of files.
+
+Draw an image here to compare how you `cat` a `/proc/[pid]/status` file compare with when you `cat` a regular file.
 
 ## Hook into kernel proc vfs symbol
 
