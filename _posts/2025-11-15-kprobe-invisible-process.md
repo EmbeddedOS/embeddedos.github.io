@@ -43,9 +43,11 @@ The process information details are under the dynamic folder `/proc/[pid]`:
 
 User space tools such as `ps`, `top`, `free` check for this virtual fs and get system + processes information.
 
-We call procfs as virtual since it's not actually existing on the hard disk. Every time you use system call to access them kernel redirect it to different part with normal regular directories of files.
+We call procfs as virtual since it's not actually existing on the hard disk. Every time you use system call to access them kernel redirect it to different part with normal regular directories or files.
 
-Draw an image here to compare how you `cat` a `/proc/[pid]/status` file compare with when you `cat` a regular file.
+![access_proc_fs](assets/img/cat_proc_fs.png)
+
+When you access an entry under procfs,
 
 ## Hook into kernel proc vfs symbol
 
