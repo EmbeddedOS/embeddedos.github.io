@@ -22,7 +22,7 @@ Kprobes is a powerful feature in the kernel. In this blog, we will practice it b
 Kernel version: 6.18.0-rc3
 Architecture: arm64
 Board: qemu-aarch64-system virtual board.
-kernel config makes sure Kprobes is enabled:
+kernel config: makes sure Kprobes is enabled.
 
 ```text
 CONFIG_KPROBES=y
@@ -36,9 +36,9 @@ Kprobes (Kernel probes) is a mechanism that allows you to insert probes (breakpo
 
 How does it work? when a kprobe is registered, Kprobes make a copy of the probed instruction and replace the first byte(s) with breakpoint instructions. When the CPU hits the breakpoint instruction, a trap occurs, CPU's registers are saved and the control passes to Kprobes. It executes the *pre_handler* associated with the kprobe, passing the handler the addresses of the `kprobe struct` and the saved registers. Next, Kprobes single-steps its copy of the probed instruction. After the instruction is single-stepped, Kprobes executes the *post_handler*, if any. Execution then continues with the instruction following the probepoint.
 
-Image here.
+![Kprobe replace instruction](assets/img/kprobe_replace_inst.png)
 
-Since Kprobes can probe into kernel running code, it can change the register set, even instruction pointer `pc` register. One note if you do that, you should return non zero value from the *pre_handler*, so Kprobes will bypass the single step and just return to the given address.
+Since Kprobes can probe into kernel running code, it can change the register set. This is what we'll do in this blog, we change the kernel execution path by edit the saved `pc` register to point to our target instruction, and then return non zero value from the *pre_handler*, so Kprobes will bypass the single step and just return to the given address. Will dig deeper in next sections.
 
 ## How a process's info is exposed to user space?
 
@@ -51,15 +51,62 @@ The process information details are under the dynamic folder `/proc/[pid]/`, for
 - `exe`: A symbolic link to the executable file of the process.
 - `cwd`: A symbolic link to the current working directory of the process.
 
-User space tools such as `ps`, `top`, `free` check for this virtual fs and get system + processes information. We call procfs as virtual since it's not actually existing on the hard disk. Every time you use system call to access them kernel redirect it to different part with normal regular directories or files.
+User space tools such as `ps`, `top`, `free` check for this virtual fs and get system + processes information. We call procfs as a virtual fs since it's not actually existing on the hard disk. Every time you use system call to access them kernel redirect it to different part with regular directories or files.
 
 ![access_proc_fs](assets/img/cat_proc_fs.png)
 
-When you access an entry under procfs,
+## Kernel system map
 
 ## Hook into kernel proc vfs symbol
 
-## Kernel system map
+```c
+static int proc_root_readdir(struct file *file, struct dir_context *ctx)
+{
+	if (ctx->pos < FIRST_PROCESS_ENTRY) {
+		int error = proc_readdir(file, ctx);
+		if (unlikely(error <= 0))
+			return error;
+		ctx->pos = FIRST_PROCESS_ENTRY;
+	}
+
+	return proc_pid_readdir(file, ctx);
+}
+
+/*
+ * The root /proc directory is special, as it has the
+ * <pid> directories. Thus we don't use the generic
+ * directory handling functions for that..
+ */
+static const struct file_operations proc_root_operations = {
+	.read		 = generic_read_dir,
+	.iterate_shared	 = proc_root_readdir,
+	.llseek		= generic_file_llseek,
+};
+
+/*
+ * proc root can do almost nothing..
+ */
+static const struct inode_operations proc_root_inode_operations = {
+	.lookup		= proc_root_lookup,
+	.getattr	= proc_root_getattr,
+};
+
+/*
+ * This is the root "inode" in the /proc tree..
+ */
+struct proc_dir_entry proc_root = {
+	.low_ino	= PROCFS_ROOT_INO,
+	.namelen	= 5,
+	.mode		= S_IFDIR | S_IRUGO | S_IXUGO,
+	.nlink		= 2,
+	.refcnt		= REFCOUNT_INIT(1),
+	.proc_iops	= &proc_root_inode_operations,
+	.proc_dir_ops	= &proc_root_operations,
+	.parent		= &proc_root,
+	.subdir		= RB_ROOT,
+	.name		= "/proc",
+};
+```
 
 ## Make the process unkillable from user space
 
