@@ -53,7 +53,7 @@ The process information details are under the dynamic folder `/proc/[pid]/`, for
 
 User space tools such as `ps`, `top`, `free` check for this virtual fs and get system + processes information. We call procfs as a virtual fs since it's not actually existing on the hard disk. Every time you use system call to access them kernel redirect it to different part with regular directories or files.
 
-![access_proc](assets/img/cat_proc_fs.png)
+![access_proc](assets/img/cat_proc.png)
 
 ## Kernel symbol address lookup
 
@@ -77,6 +77,8 @@ For some Linux distribution, the system map and vmlinux files are installed into
 Our target would be changing the kernel execution path, so it's very important to get not only the symbol table but also the `vmlinux` (ELF kernel image, often used for debugging), so we can do reverse engineer things :D.
 
 ## Hook into kernel proc vfs symbol
+
+Enough of theories, let's dig into the kernel source code.
 
 ```c
 static int proc_root_readdir(struct file *file, struct dir_context *ctx)
