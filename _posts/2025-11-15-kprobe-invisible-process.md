@@ -495,7 +495,7 @@ Install our kernel module.
 ~ # insmod lkm.ko
 ```
 
-Verify the process information again. Now it completely disapears:
+Verify the process information again. Now it completely disapears while the host still keeps receiving new messages:
 
 ![process still visible](assets/img/invisible_proc_demo2.png)
 
