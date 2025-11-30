@@ -17,14 +17,14 @@ Kprobes is a powerful feature in the kernel. In this blog, we will practice it b
 
 ## Target platform
 
- Since the register set is architecture specific and different kernel versions, configs have different system maps, symbol addresses, etc. It is important to note about our target system:
-
-Kernel version: 6.18.0-rc3
-Architecture: arm64
-Board: qemu-aarch64-system virtual board.
-kernel config: makes sure Kprobes is enabled.
+Since the register set is architecture specific and different kernel versions, configs have different system maps, symbol addresses, etc. It is important to note about our target system:
+- Kernel version: `6.18.0-rc3`
+- Architecture: `arm64`
+- Board: `qemu-aarch64-system` virtual board.
+- kernel config: makes sure Kprobes is enabled.
 
 ```text
+CONFIG_KALLSYMS=y
 CONFIG_KPROBES=y
 CONFIG_KRETPROBES=y
 CONFIG_KPROBE_EVENTS=y
@@ -53,9 +53,28 @@ The process information details are under the dynamic folder `/proc/[pid]/`, for
 
 User space tools such as `ps`, `top`, `free` check for this virtual fs and get system + processes information. We call procfs as a virtual fs since it's not actually existing on the hard disk. Every time you use system call to access them kernel redirect it to different part with regular directories or files.
 
-![access_proc_fs](assets/img/cat_proc_fs.png)
+![access_proc](assets/img/cat_proc_fs.png)
 
-## Kernel system map
+## Kernel symbol address lookup
+
+In order to hook into kernel points you must know the target addresses or the symbol names. Linux provides several ways to archive those information:
+
+- At compile time, kernel build system generates a system map file (mapping symbol with address) and a vmlinux (a kernel image in ELF format).
+- At runtime, kernel also exposes a virtual file `/proc/kallsyms` to archive runtime symbol addresses (that includes dynamic kernel module symbol, and sometimes more accurate than the static system map file).
+
+```bash
+cat /proc/kallsyms | head -n 10
+0000000000000000 A fixed_percpu_data
+0000000000000000 A __per_cpu_start
+...
+```
+
+For some Linux distribution, the system map and vmlinux files are installed into rootfs under `/boot` folder by default when buiding the rootfs image. Often found in:
+- `/boot/System.map-$(uname -r)`.
+- `vmlinuz`.
+- `vmlinuz-$(uname -r)`.
+
+Our target would be changing the kernel execution path, so it's very important to get not only the symbol table but also the `vmlinux` (ELF kernel image, often used for debugging), so we can do reverse engineer things :D.
 
 ## Hook into kernel proc vfs symbol
 
@@ -106,6 +125,14 @@ struct proc_dir_entry proc_root = {
 	.subdir		= RB_ROOT,
 	.name		= "/proc",
 };
+```
+
+```bash
+$ aarch64-none-linux-gnu-objdump vmlinux -d | grep -e "ffff8000805b0068 <proc_pid_readdir>:" -A 200
+
+ffff8000805b0068 <proc_pid_readdir>:
+...
+
 ```
 
 ## Make the process unkillable from user space
