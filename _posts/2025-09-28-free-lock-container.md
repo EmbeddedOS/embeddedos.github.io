@@ -10,7 +10,7 @@ tags: [low-latency, oop, lock-free, cpp]
 image:
   path: assets/img/lockfree.png
   alt: lock-free.
-published: true
+published: false
 ---
 
 If a data structure is to be accessed from multiple threads, either it must be completely immutable and no synchronization is necessary, or the program must be designed to ensure that changes are correctly synchronized between threads. Before we discover the lock-free design, let's take a look at lock-based concurrent data structures.
