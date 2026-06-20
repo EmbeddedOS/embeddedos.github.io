@@ -359,3 +359,33 @@ After that the device will auto enter sleep.
 - The subsystem also has the concept of cooling devices, which are mechanisms the system can use to reduce temperature.
   - These include fands, CPU frequency scaling and other hardware or software controls capable of affecting the system's heat output.
 
+### Power supply subsystem
+
+- One reason we might care about power consumption is because the system is powered by a battery, so monitoring the battery status is a very important aspect of pm in linux.
+- The Linux Kernel provides a power supply subsystem to monitor devices like batteries, fuel gauges, chargers, etc.
+- The subsytem makes it possible to collect information about the battery, estimate the remaining battery life and implement power-saving measures to extend battery usage at runtime.
+  - With an inteface exposed in sysfs, user-space app can identify when the system is on battery and its current capacity, improving battery usage by adjusting the CPU frequency, suspending the system after periods or inactivity, and so on!
+
+### Regulator subsystem
+
+- The regulator subsystem in Linux is designed to provide a standardized interface for controlling voltage and current regulators found in PMICs, LDOs, etc.
+- This subsystem has a consumer/producer model:
+  - A producer driver talks to a regulator device and exposes an interface for consumers to turn it on/off, adjust voltage or current levels, etc.
+  - A consumer driver uses a regulator to control the power or current applied to a specific device.
+- Most of the control is done in kernel space, but a user-space interface is exposed in sysfs, which allows monitoring the status and debugging regulators.
+
+## User space applications
+
+- Most kernel subsystems expose an interface in sysfs for app to configure and manage power consumption.
+- While purpose of the kernel is to provide abstractions, apps should implement policies to manage power consumption, based on the requirements.
+- There are tools provide mechanisms for monitoring energy usage, controlling power saving features, and configuring system settings to optimize it for battery life or energy efficiency.
+- Example: powertop, TLP, cpupower, Upower, ACPI, etc.
+
+## Summary
+
+Major steps for PM:
+
+1. Understand your needs and find a good balance between power consumption, performance and UX.
+2. Identify and implement a strategy for idle pm (suspend to RAM, autosleep, wake sources, CPUIdle, Runtime PM, etc.).
+3. Identify and implement a strategy for active pm (CPUFreq, thermal, battery, regulator, etc.).
+4. Design hw + app with power consumption in mind.
