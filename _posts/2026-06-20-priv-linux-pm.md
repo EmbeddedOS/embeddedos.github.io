@@ -278,4 +278,33 @@ deleted     	0		0		0		0		0		0		0		0		0
   - It has its origins in the Wakelock Android feature.
 - It can enabled via an interface exposed in sysfs (`/sys/power/autosleep`).
 - When enabled, the kernel will automatically enter a low power state if there are no active wakeup sources.
-- The user can register/unregister "software-based" wake sources by writing to `/sys/power/wake_lock` and `/sys/power/wake_unlock`.
+- The user can register/unregister "software-based" wake sources by writing to `/sys/power/wake_lock` and `/sys/power/wake_unlock`. For example:
+
+```bash
+echo "my_lock" > /sys/power/wake_lock
+```
+
+System will not sleep until:
+
+```bash
+echo "my_lock" > /sys/power/wake_unlock
+```
+
+After that the device will auto enter sleep.
+
+### CPU idle states
+
+- For situations where you want to put a CPU into low-power mode, CPU idle states might be leveraged.
+- CPUs have several idle states (also called C-states or sleep modes) representing different levels of inactivity.
+  - The deeper the idle state, the greater the power savings.
+  - The deeper the idle state, the longer the wake-up time (latency).
+  - Getting a CPU into an idle state is a trade off between power savings and latency.
+- This feature might be useful especially in SMP systems (while one CPU is doing some processing, the others might be in a deeper idle state to save power).
+
+### CPU Idle
+
+- The CPU Idle subsystem in the linux kernel is designed to manage these idle states to save power when the processor is not actively performing tasks.
+- When the Linux Kernel scheduler detects that there are no runnable tasks for a CPU, it calls the CPUIdle subsystem to put the CPU into a specific idle state.
+- The decision to enter an idle state considers factors like the expected duration of idleness and the energy cost of entering and exiting the state.
+- A few governors are available to configure the behavior of the CPUIdle subsystem.
+  - These governors will make decisions like when to move from one idle state to another, which idle state to move next, and so on.
