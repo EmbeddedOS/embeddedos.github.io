@@ -308,3 +308,54 @@ After that the device will auto enter sleep.
 - The decision to enter an idle state considers factors like the expected duration of idleness and the energy cost of entering and exiting the state.
 - A few governors are available to configure the behavior of the CPUIdle subsystem.
   - These governors will make decisions like when to move from one idle state to another, which idle state to move next, and so on.
+
+### CPUIdle governors
+
+- **ladder**: The ladder governor takes a simpler appproach, stepping through the available idle states sequentially based on CPU activity (suitable for systems with predictable workload patterns).
+- **menu**: Based on past idle periods and selects the most appropriate idle state that maximizes power savings while considering the exit latency.
+- **teo**: The Timer Events Oriented (TEO) governor follows the same basic strategy as the **menu** governor, but it is designed to be more ideal for tickless systems (created by Intel, intial benchmarks show it has better performance on x86 based systems).
+
+### Runtime PM
+
+- Another approach to reduce power consumption is getting I/O devices into a low power mode when they are idle.
+  - On Linux, this can be done by the Runtime PM subsystem.
+- When the kernel detects a device is idle (it hasn't been used for a configurable period), it calls some callbacks from the correspondent device driver to suspend the device or put it into a low-power mode.
+  - A wakeup source might be configured to wake up the device in response to events.
+- Devices that share a common power source might be grouped into a PM domain, allowing the kernel to manage the power state of devices within a domain all together.
+  - This is managed by a kernel framework called *genpd* (Generic Power Domain).
+
+## Linux Kernel active PM techniques
+
+### DVFS
+
+- System-wide pm is useful when you have nothing to do, and just want to sleep and wait for events.
+- Now, in case you have something to do but still want to save power, scaling down the frequency and voltage might be a good option.
+  - This is a PM technique called DBFS (Dynamic Voltage and Frequency Scaling).
+- DVFS uses Operating Performance Points (aka OPPs) as inputs to manage the frequency and voltage of a CPU or a hardware device.
+  - OPPs refer to specific combinations of voltage and frequency at which the hardware can operate (provided to the kernel via device tree on most platforms and ACPI tables on x86).
+
+### CPUFreq
+
+- In the Linux Kernel, DVFS is mostly implemented by the CPUFreq subsystem.
+- CPUFreq (CPU Frequency Scaling) makes it possible to configure the processor to run at lower speeds when full performance is not needed, therefore saving power.
+- The CPU frequency can be configured manually from user-space via an interface provided in `sysfs`.
+- The frequency can also be adjusted by the kernel via governors.
+  - Governors are algorithms or policies that automatically change the CPU frequency in response to changes in system conditions and workload demands.
+
+### CPUFreq governors
+
+- Performance - always selects the highest CPU frequency.
+- Powersave - always selects the lowest available CPU frequency.
+- ondemand - dynamically adjusts the CPU frequency based on current usage. -> default mode.
+- conservative - 
+- userspace - Allow user or app control over CPU frequency.
+- schedutil - Uses information provided by the scheduler to make frequency scaling decisions.
+
+### Thermal management subsystem
+
+- The thermal subsystem organizes the system into `thermal zones`, each representing a thermal domain or component that can generate heat (CPU, GPU, battery, etc.).
+  - Each thermal zone can have one or more temperature sensors associated with it so its thermal conditions can be monitored.
+  - Within each thermal zone, the subsystem can define "trip points", which are specific temperature thresholds that trigger predefined actions when crossed.
+- The subsystem also has the concept of cooling devices, which are mechanisms the system can use to reduce temperature.
+  - These include fands, CPU frequency scaling and other hardware or software controls capable of affecting the system's heat output.
+
