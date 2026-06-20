@@ -103,4 +103,179 @@ The shell should be shutdown after that.
 ### Wakeup sources
 
 - When the system is in low-power mode, we need a wakeup source, or the system will sleep forever.
-- A wake up source 
+- A wake up source is a mechanism that allows hardware devices to wake the system up from low-power states such as suspend or standby.
+- They are essential for maintaining a balance between power consumption and system responsiveness, enabling devices to respond to external events even when they are in a power-saving mode.
+- Wakeup sources can be automatically registered by the kernel (e.g via device drivers) or by the user via an interface exposed in *sysfs*.
+
+```bash
+cat /sys/kernel/debug/wakeup_sources
+name            active_count    event_count     wakeup_count    expire_count    active_since    total_time      max_time      last_change     prevent_suspend_time
+5-4.3           0               0               0               0               0               0               0    00
+0000:43:00.0    0               0               0               0               0               0               0    00
+0000:46:00.3    0               0               0               0               0               0               0    00
+PNP0C14:02      0               0               0               0               0               0               0    00
+0000:46:00.1    0               0               0               0               0               0               0    00
+0000:24:00.3    0               0               0               0               0               0               0    00
+0000:04:00.3    0               0               0               0               0               0               0    00
+PNP0C14:01      0               0               0               0               0               0               0    00
+PNP0C14:00      0               0               0               0               0               0               0    00
+alarmtimer.0.auto       0               0               0               0               0               0            00               0
+00:03           0               0               0               0               0               0               0    00
+PNP0C0C:00      0               0               0               0               0               0               0    00
+AMDI0030:00     0               0               0               0               0               0               0    00
+LNXPWRBN:00     0               0               0               0               0               0               0    00
+PNP0A08:03      0               0               0               0               0               0               0    00
+device:104      0               0               0               0               0               0               0    00
+device:100      0               0               0               0               0               0               0    00
+device:103      0               0               0               0               0               0               0    00
+0000:60:07.1    0               0               0               0               0               0               0    00
+device:ff       0               0               0               0               0               0               0    00
+device:de       0               0               0               0               0               0               0    00
+PNP0A08:02      0               0               0               0               0               0               0    00
+device:9e       0               0               0               0               0               0               0    00
+device:9a       0               0               0               0               0               0               0    00
+device:d2       0               0               0               0               0               0               0    00
+device:c6       0               0               0               0               0               0               0    00
+device:c2       0               0               0               0               0               0               0    00
+device:c0       0               0               0               0               0               0               0    00
+device:ba       0               0               0               0               0               0               0    00
+device:c5       0               0               0               0               0               0               0    00
+0000:42:06.0    0               0               0               0               0               0               0    00
+device:c1       0               0               0               0               0               0               0    00
+0000:42:05.0    0               0               0               0               0               0               0    00
+device:bf       0               0               0               0               0               0               0    00
+0000:42:02.0    0               0               0               0               0               0               0    00
+device:b9       0               0               0               0               0               0               0    00
+device:b4       0               0               0               0               0               0               0    00
+device:9d       0               0               0               0               0               0               0    00
+0000:40:07.1    0               0               0               0               0               0               0    00
+device:99       0               0               0               0               0               0               0    00
+0000:40:03.4    0               0               0               0               0               0               0    00
+device:8f       0               0               0               0               0               0               0    00
+0000:40:03.3    0               0               0               0               0               0               0    00
+device:8d       0               0               0               0               0               0               0    00
+0000:40:03.2    0               0               0               0               0               0               0    00
+device:8b       0               0               0               0               0               0               0    00
+0000:40:03.1    0               0               0               0               0               0               0    00
+device:89       0               0               0               0               0               0               0    00
+0000:40:01.3    0               0               0               0               0               0               0    00
+device:7d       0               0               0               0               0               0               0    00
+0000:40:01.1    0               0               0               0               0               0               0    00
+device:b3       0               0               0               0               0               0               0    00
+device:7a       0               0               0               0               0               0               0    00
+PNP0A08:01      0               0               0               0               0               0               0    00
+device:69       0               0               0               0               0               0               0    00
+device:68       0               0               0               0               0               0               0    00
+device:66       0               0               0               0               0               0               0    00
+device:65       0               0               0               0               0               0               0    00
+device:61       0               0               0               0               0               0               0    00
+0000:20:08.1    0               0               0               0               0               0               0    00
+device:64       0               0               0               0               0               0               0    00
+0000:20:07.1    0               0               0               0               0               0               0    00
+device:60       0               0               0               0               0               0               0    00
+0000:20:03.2    0               0               0               0               0               0               0    00
+device:52       0               0               0               0               0               0               0    00
+0000:20:03.1    0               0               0               0               0               0               0    00
+device:50       0               0               0               0               0               0               0    00
+device:3f       0               0               0               0               0               0               0    00
+PNP0A08:00      0               0               0               0               0               0               0    00
+device:2a       0               0               0               0               0               0               0    00
+device:28       0               0               0               0               0               0               0    00
+device:24       0               0               0               0               0               0               0    00
+device:3d       0               0               0               0               0               0               0    00
+device:3c       0               0               0               0               0               0               0    00
+0000:00:08.1    0               0               0               0               0               0               0    00
+device:27       0               0               0               0               0               0               0    00
+0000:00:07.1    0               0               0               0               0               0               0    00
+device:23       0               0               0               0               0               0               0    00
+0000:00:01.2    0               0               0               0               0               0               0    00
+device:03       0               0               0               0               0               0               0    00
+0000:00:01.1    0               0               0               0               0               0               0    00
+device:01       0               0               0               0               0               0               0    00
+device:00       0               0               0               0               0               0               0    00
+deleted         0               0               0               0               0               0               0    00
+```
+
+Setup RTC to wake up device: 
+
+```bash
+~ # echo +15 > /sys/class/rtc/rtc0/wakealarm
+~ # echo mem > /sys/power/state
+[  808.523295] PM: suspend entry (s2idle)
+[  808.528729] Filesystems sync: 0.004 seconds
+[  808.540409] Freezing user space processes
+[  808.544351] Freezing user space processes completed (elapsed 0.003 seconds)
+[  808.545430] OOM killer disabled.
+[  808.546054] Freezing remaining freezable tasks
+[  808.549048] Freezing remaining freezable tasks completed (elapsed 0.002 seconds)
+[  808.549929] printk: Suspending console(s) (use no_console_suspend to debug)
+[  822.166996] OOM killer enabled.
+[  822.167516] Restarting tasks: Starting
+[  822.170344] Restarting tasks: Done
+[  822.172492] PM: suspend exit
+```
+
+Most drivers have `power` directory. For example:
+
+```bash
+~ # ls -la ./sys/class/tty/ttyAMA0/power/
+total 0
+drwxr-xr-x    2 0        0                0 Jun 20 10:29 .
+drwxr-xr-x    3 0        0                0 Jun 20 10:29 ..
+-rw-r--r--    1 0        0             4096 Jun 20 10:29 autosuspend_delay_ms
+-rw-r--r--    1 0        0             4096 Jun 20 10:29 control
+-r--r--r--    1 0        0             4096 Jun 20 10:29 runtime_active_time
+-r--r--r--    1 0        0             4096 Jun 20 10:29 runtime_status
+-r--r--r--    1 0        0             4096 Jun 20 10:29 runtime_suspended_time
+-rw-r--r--    1 0        0             4096 Jun 20 10:29 wakeup
+-r--r--r--    1 0        0             4096 Jun 20 10:29 wakeup_abort_count
+-r--r--r--    1 0        0             4096 Jun 20 10:29 wakeup_active
+-r--r--r--    1 0        0             4096 Jun 20 10:29 wakeup_active_count
+-r--r--r--    1 0        0             4096 Jun 20 10:29 wakeup_count
+-r--r--r--    1 0        0             4096 Jun 20 10:29 wakeup_expire_count
+-r--r--r--    1 0        0             4096 Jun 20 10:29 wakeup_last_time_ms
+-r--r--r--    1 0        0             4096 Jun 20 10:29 wakeup_max_time_ms
+-r--r--r--    1 0        0             4096 Jun 20 10:29 wakeup_total_time_ms
+```
+
+That we can enable wakeup (when you type any thing, interrupt happen and wake device up):
+
+```bash
+~ # echo enabled > ./sys/class/tty/ttyAMA0/power/wakeup
+~ #
+~ #
+~ # echo mem > /sys/power/state
+[ 1896.543394] PM: suspend entry (s2idle)
+[ 1896.545563] Filesystems sync: 0.000 seconds
+[ 1896.551339] Freezing user space processes
+[ 1896.554481] Freezing user space processes completed (elapsed 0.002 seconds)
+[ 1896.555232] OOM killer disabled.
+[ 1896.555652] Freezing remaining freezable tasks
+[ 1896.558191] Freezing remaining freezable tasks completed (elapsed 0.001 seconds)
+[ 1896.558859] printk: Suspending console(s) (use no_console_suspend to debug)
+[ 1897.940981] OOM killer enabled.
+[ 1897.941553] Restarting tasks: Starting
+[ 1897.943537] Restarting tasks: Done
+[ 1897.945210] PM: suspend exit
+
+~ #
+```
+
+Check the wakeup source:
+
+```bash
+~ # cat /sys/kernel/debug/wakeup_sources
+name		active_count	event_count	wakeup_count	expire_count	active_since	total_time	max_time	last_change	prevent_suspend_time
+ttyAMA0     	0		0		0		0		0		0		0		0		0
+alarmtimer.0.auto	0		0		0		0		0		0		0		0		0
+9010000.pl031	1		1		0		0		0		0		0		42835		0
+deleted     	0		0		0		0		0		0		0		0		0
+```
+
+### Autosleep
+
+- The autosleep feature (also called "opportunistic suspend") is a mechanism that allows the system to automatically enter a low power sleep state (such as suspend to RAM) when there is nothing to be done.
+  - It has its origins in the Wakelock Android feature.
+- It can enabled via an interface exposed in sysfs (`/sys/power/autosleep`).
+- When enabled, the kernel will automatically enter a low power state if there are no active wakeup sources.
+- The user can register/unregister "software-based" wake sources by writing to `/sys/power/wake_lock` and `/sys/power/wake_unlock`.
