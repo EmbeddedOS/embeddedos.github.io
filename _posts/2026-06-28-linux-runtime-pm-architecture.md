@@ -13,6 +13,8 @@ image:
 published: true
 ---
 
+There are two techniques in power management (that will called as dynamic power management): *Active* and *Idle*. *Active* is where the device keep running but the power save is active that automatically adjust the system (e.g: CPU Frequences, Regulator). *Idle* is where ...
+
 Power Management in Linux is a big subsystem that includes so many subdomains: supported hardware, CPUIdle, CPUFreq governors, DVFS, thermal, and so on. In this blog, we are going to discuss the System Wide and the Runtime Power Management frameworks, how device drivers should handle 
 
 ## 1. The key concept `struct dev_pm_ops`
@@ -56,7 +58,7 @@ sequenceDiagram
     DEV->>PL:
     PL->>PL: enter()
     Note over PL: Suspended ...
-    PL->>PL: wake()
+    PL->>PL: wake()s
     PL->>DEV:
     DEV->>DEV: resume_noirq()
     DEV->>DEV: resume_early()
@@ -71,7 +73,7 @@ sequenceDiagram
 
 You don't have to implement all those callbacks for your driver, some of those are handled by the core automatically. But this just allows you to hook into important points.
 
-The `struct dev_pm_ops` will be ued for all the rest of the platform device driver level suspend.
+The `struct dev_pm_ops` will be used for all the rest of the platform device driver level suspend.
 
 ## 1. System power management
 
