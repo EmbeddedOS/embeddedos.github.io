@@ -10,7 +10,7 @@ tags: [linux, kernel, runtime, pm]
 image:
   path: assets/img/invisible_process.png
   alt: Linux Power Management
-published: false
+published: true
 ---
 
 Power Management in Linux is a big subsystem that includes so many subdomains: supported hardware, CPUIdle, CPUFreq governors, DVFS, thermal, and so on. In this blog, we are going to discuss the System Wide and the Runtime Power Management frameworks, how device drivers should handle 
