@@ -8,7 +8,7 @@ date: 2026-06-28 00:01:00 +0800
 categories: [kernel, pm]
 tags: [linux, kernel, runtime, pm]
 image:
-  path: assets/img/invisible_process.png
+  path: assets/img/linux_pm_architecture.png
   alt: Linux Power Management
 published: true
 ---
